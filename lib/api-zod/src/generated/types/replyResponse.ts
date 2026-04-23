@@ -6,10 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface LockedDay {
-  slug: string;
-  index: number;
-  unlockDate: string;
-  message: string;
-  previewText: string;
+export interface ReplyResponse {
+  ok: boolean;
 }

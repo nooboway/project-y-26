@@ -13,6 +13,7 @@ import {
   AdminListDaysResponse,
   AdminUpdateDayBody,
   AdminUpdateDayResponse,
+  AdminListSeenResponse,
 } from "@workspace/api-zod";
 import { loadSite, dayUnlockDateIso } from "../lib/lock";
 
@@ -133,9 +134,24 @@ router.get("/admin/days", requireAdmin, async (_req, res): Promise<void> => {
     songTitle: d.songTitle,
     songArtist: d.songArtist,
     youtubeId: d.youtubeId,
+    signatureSvg: d.signatureSvg,
+    voiceNoteUrl: d.voiceNoteUrl,
+    previewText: d.previewText,
+    replyText: d.replyText,
     drafts: d.drafts,
     reasons: d.reasons,
     gallery: d.gallery,
+  }))));
+});
+
+router.get("/admin/seen", requireAdmin, async (_req, res): Promise<void> => {
+  const rows = await db.select().from(daysTable).orderBy(daysTable.index);
+  res.json(AdminListSeenResponse.parse(rows.map((d) => ({
+    slug: d.slug,
+    title: d.title,
+    openedAt: d.openedAt ? d.openedAt.toISOString() : null,
+    replyAt: d.replyAt ? d.replyAt.toISOString() : null,
+    replyText: d.replyText ?? "",
   }))));
 });
 
@@ -175,6 +191,10 @@ router.put("/admin/days/:slug", requireAdmin, async (req, res): Promise<void> =>
     songTitle: updated.songTitle,
     songArtist: updated.songArtist,
     youtubeId: updated.youtubeId,
+    signatureSvg: updated.signatureSvg,
+    voiceNoteUrl: updated.voiceNoteUrl,
+    previewText: updated.previewText,
+    replyText: updated.replyText,
     drafts: updated.drafts,
     reasons: updated.reasons,
     gallery: updated.gallery,

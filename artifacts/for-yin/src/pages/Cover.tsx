@@ -2,12 +2,20 @@ import { useGetSite, useListDays, getGetSiteQueryKey, getListDaysQueryKey } from
 import { Link, useLocation } from "wouter";
 import { Countdown, MastheadBar, PageFrame, SplitHeading, Ticker } from "@/components/Chrome";
 import { IMG } from "@/lib/assets";
+import { useAudio } from "@/lib/audio";
+import { usePageMeta } from "@/lib/meta";
 import { motion } from "framer-motion";
 
 export default function Cover() {
   const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey(), refetchInterval: 60_000 } });
   const { data: days } = useListDays({ query: { queryKey: getListDaysQueryKey(), refetchInterval: 60_000 } });
   const [, navigate] = useLocation();
+  const audio = useAudio();
+  usePageMeta({
+    title: site ? `${site.title}` : "for yin",
+    description: "a five-day, hand-set issue. for yin, slowly. opened one day at a time.",
+    image: IMG.coverHero,
+  });
 
   if (!site || !days) {
     return (
@@ -27,7 +35,10 @@ export default function Cover() {
 
   const handleOpen = () => {
     if (!today) return;
-    // Play song for today's day (we don't have it yet; will load on day page).
+    // Kick audio inside the user gesture so mobile browsers honor it.
+    if (today.youtubeId && !audio.currentId) {
+      audio.play(today.youtubeId);
+    }
     navigate(`/day/${today.slug}`);
   };
 

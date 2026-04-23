@@ -28,11 +28,13 @@ See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and pa
 
 ## Artifacts
 
-- **api-server** (`artifacts/api-server`) — Express 5 API for the For Yin microsite. Routes: `/api/site`, `/api/live`, `/api/days`, `/api/days/:slug` (returns 423 LockedDay for future days), `/api/admin/*` (HMAC-signed token, passphrase env `ADMIN_PASSPHRASE`, default `love-yin-2026`, secret env `ADMIN_TOKEN_SECRET`). Lock engine in `src/lib/lock.ts`. Seed in `src/lib/seed.ts` (default birthday is start+4 days from first boot). DB tables: `site_config`, `days` (JSONB drafts/reasons/gallery).
-- **for-yin** (`artifacts/for-yin`) — React + Vite editorial microsite. Routes: `/` (cover), `/day/:slug`, `/locked`, `/archive`, `/admin`. Hidden YouTube audio player via `lib/audio.tsx`. Six day-kind layouts in `pages/Day.tsx`: letter / magazine / drafts / why-you / gallery / birthday. Generated images in `attached_assets/generated_images/`.
+- **api-server** (`artifacts/api-server`) — Express 5 API for the For Yin microsite. Routes: `/api/site`, `/api/live`, `/api/days`, `/api/days/:slug` (returns 423 LockedDay with `previewText` for future days), `/api/days/:slug/seen` (pingback), `/api/days/:slug/reply` (reply form), `/api/admin/*` (HMAC-signed token, passphrase env `ADMIN_PASSPHRASE`, default `love-yin-2026`, secret env `ADMIN_TOKEN_SECRET`), `/api/admin/seen` (per-day open + reply timestamps). Lock engine in `src/lib/lock.ts`. Seed in `src/lib/seed.ts`. DB tables: `site_config`, `days` (JSONB drafts/reasons/gallery; plus `signatureSvg`, `voiceNoteUrl`, `previewText`, `replyText`, `replyAt`, `openedAt`).
+- **for-yin** (`artifacts/for-yin`) — React + Vite editorial microsite. Routes: `/` (cover), `/day/:slug`, `/locked`, `/archive`, `/admin`, `/print/all` (printable single-page edition). Hidden YouTube audio player via `lib/audio.tsx` (kicked inside the user gesture on cover for mobile). Six day-kind layouts in `pages/Day.tsx`: letter / magazine / drafts / why-you / gallery / birthday. Birthday adds blow-out-the-candle moment + confetti + reply form; gallery uses polaroid stack for ≤9 images. Server pingback via `lib/seen.ts` (once per device per slug). Per-page OG/Twitter meta via `lib/meta.ts`. Paper-grain + warm vignette overlays in `index.css`. Generated images in `attached_assets/generated_images/`.
 - **mockup-sandbox** (`artifacts/mockup-sandbox`) — Component preview server (template, currently unused).
 
 ## For Yin admin
 - URL: `/admin` on the site; passphrase `love-yin-2026` (override via `ADMIN_PASSPHRASE`).
 - All cross-device content is server-stored; the live ticker polls `/api/live` every 60s.
 - Set `unlockOverride` on the site row to manually unlock through day N (0 = auto).
+- Per-day editor fields include: `previewText` (whispered through the locked door), `voiceNoteUrl` (audio file), `signatureSvg` (raw `<svg>` rendered on the letter / birthday).
+- The "opens · replies" panel polls `/api/admin/seen` every 30s — shows when each day was opened and any one-line replies received.

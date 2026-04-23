@@ -6,10 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface LockedDay {
+export interface SeenStamp {
   slug: string;
-  index: number;
-  unlockDate: string;
-  message: string;
-  previewText: string;
+  title: string;
+  openedAt: string | null;
+  replyAt: string | null;
+  replyText: string;
 }

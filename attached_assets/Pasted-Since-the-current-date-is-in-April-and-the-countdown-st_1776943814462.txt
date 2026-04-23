@@ -1,0 +1,19 @@
+Since the current date is in April and the countdown starts in late May, the "Locked" state is likely what she would see right now. Here are a few technical and design observations to ensure it hits perfectly when the time comes:
+1. Testing the "Unlock" States
+Since you're still a few weeks out from the May 25th start date, you’ll want to verify that each day looks exactly how you want it on a mobile device.
+• The Cheat Code: You have a DEV_DAY variable in your script. Temporarily change const DEV_DAY = null; to const DEV_DAY = 1; (then 2, 3, etc.) and redeploy to see exactly how each day renders on your phone.
+• Check the Pips: Ensure the "Today" pip glow isn't clipping on smaller screens.
+2. Audio & Mobile Interaction
+Mobile browsers are very strict about the autoplay=1 parameter in your YouTube iframes.
+• The "Unlock" Trigger: Ensure that when she clicks "Open today's letter," the music starts immediately. Since that is a user-initiated click, the audio should bypass the browser's autoplay block.
+• Volume Level: You might want to test if the YouTube embeds have a consistent volume. Some tracks are mastered louder than others; you can add &volume=50 to the URL if the API supports it, or choose tracks with similar levels.
+3. The "Live" Message Backend
+As it stands, the "Send Live" feature in your code uses localStorage.
+• The Limitation: If you type a message into the Admin Panel on your phone, it won't show up on her phone because localStorage stays on the device where it was typed.
+• The Quick Fix: If you want her to see a "Live" message from you without setting up a database, you could hardcode a new message into the script and redeploy the Replit each morning. It only takes a second and ensures she sees the update.
+4. Aesthetic Refinements
+• The Grain Overlay: The SVG noise filter adds a high-end, tactile feel. On some mobile screens, if the grain is too heavy, it can make the text slightly harder to read. Check it under different brightness settings.
+• Image Loading: For the Day 5 photo grid, if the images are large, they might "pop" in one by one. You can add a simple loading="lazy" to the images, or use a low-res blurred placeholder to keep that premium feel.
+5. The "Melt" Factor (The Text)
+The "Drafts Folder" (Day 3) is the strongest part of the sequence. The "Deleted twice" stamp is a great touch—it makes the digital experience feel human and high-stakes.
+One final check: Make sure the ADMIN_PASS is something unique before you send her the link, just in case she’s curious enough to find the hidden tap area!

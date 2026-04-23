@@ -29,6 +29,10 @@ import type {
   HealthStatus,
   LiveMessage,
   LockedDay,
+  MarkSeenResponse,
+  ReplyBody,
+  ReplyResponse,
+  SeenStamp,
   SiteState,
 } from "./api.schemas";
 
@@ -730,6 +734,252 @@ export const useAdminUpdateLive = <
 > => {
   return useMutation(getAdminUpdateLiveMutationOptions(options));
 };
+
+/**
+ * @summary Mark a day as opened (for admin pingback)
+ */
+export const getMarkDaySeenUrl = (slug: string) => {
+  return `/api/days/${slug}/seen`;
+};
+
+export const markDaySeen = async (
+  slug: string,
+  options?: RequestInit,
+): Promise<MarkSeenResponse> => {
+  return customFetch<MarkSeenResponse>(getMarkDaySeenUrl(slug), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getMarkDaySeenMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markDaySeen>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof markDaySeen>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  const mutationKey = ["markDaySeen"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof markDaySeen>>,
+    { slug: string }
+  > = (props) => {
+    const { slug } = props ?? {};
+
+    return markDaySeen(slug, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type MarkDaySeenMutationResult = NonNullable<
+  Awaited<ReturnType<typeof markDaySeen>>
+>;
+
+export type MarkDaySeenMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Mark a day as opened (for admin pingback)
+ */
+export const useMarkDaySeen = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof markDaySeen>>,
+    TError,
+    { slug: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof markDaySeen>>,
+  TError,
+  { slug: string },
+  TContext
+> => {
+  return useMutation(getMarkDaySeenMutationOptions(options));
+};
+
+/**
+ * @summary Save her reply for a day (only available on the birthday day)
+ */
+export const getSendDayReplyUrl = (slug: string) => {
+  return `/api/days/${slug}/reply`;
+};
+
+export const sendDayReply = async (
+  slug: string,
+  replyBody: ReplyBody,
+  options?: RequestInit,
+): Promise<ReplyResponse> => {
+  return customFetch<ReplyResponse>(getSendDayReplyUrl(slug), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(replyBody),
+  });
+};
+
+export const getSendDayReplyMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendDayReply>>,
+    TError,
+    { slug: string; data: BodyType<ReplyBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof sendDayReply>>,
+  TError,
+  { slug: string; data: BodyType<ReplyBody> },
+  TContext
+> => {
+  const mutationKey = ["sendDayReply"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof sendDayReply>>,
+    { slug: string; data: BodyType<ReplyBody> }
+  > = (props) => {
+    const { slug, data } = props ?? {};
+
+    return sendDayReply(slug, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SendDayReplyMutationResult = NonNullable<
+  Awaited<ReturnType<typeof sendDayReply>>
+>;
+export type SendDayReplyMutationBody = BodyType<ReplyBody>;
+export type SendDayReplyMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Save her reply for a day (only available on the birthday day)
+ */
+export const useSendDayReply = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof sendDayReply>>,
+    TError,
+    { slug: string; data: BodyType<ReplyBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof sendDayReply>>,
+  TError,
+  { slug: string; data: BodyType<ReplyBody> },
+  TContext
+> => {
+  return useMutation(getSendDayReplyMutationOptions(options));
+};
+
+/**
+ * @summary List per-day open + reply timestamps
+ */
+export const getAdminListSeenUrl = () => {
+  return `/api/admin/seen`;
+};
+
+export const adminListSeen = async (
+  options?: RequestInit,
+): Promise<SeenStamp[]> => {
+  return customFetch<SeenStamp[]>(getAdminListSeenUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getAdminListSeenQueryKey = () => {
+  return [`/api/admin/seen`] as const;
+};
+
+export const getAdminListSeenQueryOptions = <
+  TData = Awaited<ReturnType<typeof adminListSeen>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListSeen>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getAdminListSeenQueryKey();
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof adminListSeen>>> = ({
+    signal,
+  }) => adminListSeen({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof adminListSeen>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type AdminListSeenQueryResult = NonNullable<
+  Awaited<ReturnType<typeof adminListSeen>>
+>;
+export type AdminListSeenQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List per-day open + reply timestamps
+ */
+
+export function useAdminListSeen<
+  TData = Awaited<ReturnType<typeof adminListSeen>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof adminListSeen>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getAdminListSeenQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary All days, fully unlocked (admin)

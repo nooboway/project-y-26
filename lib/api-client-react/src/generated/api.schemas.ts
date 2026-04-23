@@ -64,6 +64,8 @@ export interface DaySummary {
   unlocked: boolean;
   isToday: boolean;
   unlockDate: string;
+  youtubeId: string;
+  previewText: string;
 }
 
 export interface LockedDay {
@@ -71,6 +73,7 @@ export interface LockedDay {
   index: number;
   unlockDate: string;
   message: string;
+  previewText: string;
 }
 
 export type GalleryImageSpan =
@@ -120,6 +123,10 @@ export interface Day {
   songTitle?: string;
   songArtist?: string;
   youtubeId?: string;
+  signatureSvg?: string;
+  voiceNoteUrl?: string;
+  previewText?: string;
+  replyText?: string;
   drafts?: DraftItem[];
   reasons?: string[];
   gallery?: GalleryImage[];
@@ -185,7 +192,31 @@ export interface AdminUpdateDayBody {
   songTitle?: string;
   songArtist?: string;
   youtubeId?: string;
+  signatureSvg?: string;
+  voiceNoteUrl?: string;
+  previewText?: string;
   drafts?: DraftItem[];
   reasons?: string[];
   gallery?: GalleryImage[];
+}
+
+export interface SeenStamp {
+  slug: string;
+  title: string;
+  openedAt: string | null;
+  replyAt: string | null;
+  replyText: string;
+}
+
+export interface MarkSeenResponse {
+  ok: boolean;
+  firstOpen: boolean;
+}
+
+export interface ReplyBody {
+  text: string;
+}
+
+export interface ReplyResponse {
+  ok: boolean;
 }

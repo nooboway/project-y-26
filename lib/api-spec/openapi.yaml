@@ -161,6 +161,55 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/LiveMessage" }
 
+  /days/{slug}/seen:
+    post:
+      operationId: markDaySeen
+      tags: [days]
+      summary: Mark a day as opened (for admin pingback)
+      parameters:
+        - { in: path, name: slug, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MarkSeenResponse" }
+
+  /days/{slug}/reply:
+    post:
+      operationId: sendDayReply
+      tags: [days]
+      summary: Save her reply for a day (only available on the birthday day)
+      parameters:
+        - { in: path, name: slug, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReplyBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ReplyResponse" }
+
+  /admin/seen:
+    get:
+      operationId: adminListSeen
+      tags: [admin]
+      summary: List per-day open + reply timestamps
+      parameters:
+        - { in: header, name: x-admin-token, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SeenStamp" }
+
   /admin/days:
     get:
       operationId: adminListDays
@@ -256,7 +305,9 @@ components:
         unlocked: { type: boolean }
         isToday: { type: boolean }
         unlockDate: { type: string }
-      required: [slug, index, title, eyebrow, kind, unlocked, isToday, unlockDate]
+        youtubeId: { type: string }
+        previewText: { type: string }
+      required: [slug, index, title, eyebrow, kind, unlocked, isToday, unlockDate, youtubeId, previewText]
 
     LockedDay:
       type: object
@@ -265,7 +316,8 @@ components:
         index: { type: integer }
         unlockDate: { type: string }
         message: { type: string }
-      required: [slug, index, unlockDate, message]
+        previewText: { type: string }
+      required: [slug, index, unlockDate, message, previewText]
 
     GalleryImage:
       type: object
@@ -302,6 +354,10 @@ components:
         songTitle: { type: string }
         songArtist: { type: string }
         youtubeId: { type: string }
+        signatureSvg: { type: string }
+        voiceNoteUrl: { type: string }
+        previewText: { type: string }
+        replyText: { type: string }
         drafts:
           type: array
           items: { $ref: "#/components/schemas/DraftItem" }
@@ -378,6 +434,9 @@ components:
         songTitle: { type: string }
         songArtist: { type: string }
         youtubeId: { type: string }
+        signatureSvg: { type: string }
+        voiceNoteUrl: { type: string }
+        previewText: { type: string }
         drafts:
           type: array
           items: { $ref: "#/components/schemas/DraftItem" }
@@ -387,3 +446,32 @@ components:
         gallery:
           type: array
           items: { $ref: "#/components/schemas/GalleryImage" }
+
+    SeenStamp:
+      type: object
+      properties:
+        slug: { type: string }
+        title: { type: string }
+        openedAt: { type: string, nullable: true }
+        replyAt: { type: string, nullable: true }
+        replyText: { type: string }
+      required: [slug, title, openedAt, replyAt, replyText]
+
+    MarkSeenResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+        firstOpen: { type: boolean }
+      required: [ok, firstOpen]
+
+    ReplyBody:
+      type: object
+      properties:
+        text: { type: string }
+      required: [text]
+
+    ReplyResponse:
+      type: object
+      properties:
+        ok: { type: boolean }
+      required: [ok]

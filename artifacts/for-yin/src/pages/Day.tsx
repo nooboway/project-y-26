@@ -1,9 +1,18 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useLocation, useRoute } from "wouter";
-import { useGetDay, useGetSite, getGetDayQueryKey, getGetSiteQueryKey, type Day as ApiDay } from "@workspace/api-client-react";
+import {
+  useGetDay,
+  useGetSite,
+  getGetDayQueryKey,
+  getGetSiteQueryKey,
+  useSendDayReply,
+  type Day as ApiDay,
+} from "@workspace/api-client-react";
 import { MastheadBar, PageFrame, SplitHeading, Ticker } from "@/components/Chrome";
 import { useAudio } from "@/lib/audio";
 import { heroForDay, galleryFallback, IMG } from "@/lib/assets";
+import { pingSeenOnce } from "@/lib/seen";
+import { usePageMeta } from "@/lib/meta";
 import { motion } from "framer-motion";
 
 function BackBar({ index, kind }: { index: number; kind: string }) {
@@ -20,7 +29,7 @@ function HeroBlock({ day, dark }: { day: ApiDay; dark?: boolean }) {
   return (
     <div className="px-5 sm:px-10 mt-6">
       <div className="relative aspect-[16/8] overflow-hidden">
-        <img src={src} alt="" className="absolute inset-0 h-full w-full object-cover" />
+        <img src={src} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0" style={{ background: dark ? "linear-gradient(180deg, rgba(12,10,10,.2), rgba(12,10,10,.8))" : "linear-gradient(180deg, transparent, rgba(12,10,10,.45))" }} />
         <div className="absolute inset-x-0 bottom-0 p-5 sm:p-8" style={{ color: "var(--cream)" }}>
           <div className="uppercase-mono opacity-90">{day.eyebrow}</div>
@@ -52,6 +61,28 @@ function SongBlock({ day }: { day: ApiDay }) {
   );
 }
 
+function VoiceNoteBlock({ url }: { url?: string | null }) {
+  if (!url) return null;
+  return (
+    <div className="mx-5 sm:mx-10 mt-6">
+      <div className="uppercase-mono opacity-60 mb-2">a one-take voice note · play me</div>
+      <div className="voice">
+        <audio controls preload="none" src={url} className="w-full" />
+      </div>
+    </div>
+  );
+}
+
+function SignatureBlock({ svg }: { svg?: string | null }) {
+  if (!svg) return null;
+  return (
+    <div className="mt-10 sig-svg">
+      <div className="uppercase-mono opacity-60 mb-2">— signed,</div>
+      <div dangerouslySetInnerHTML={{ __html: svg }} />
+    </div>
+  );
+}
+
 function LetterLayout({ day }: { day: ApiDay }) {
   return (
     <PageFrame>
@@ -71,7 +102,9 @@ function LetterLayout({ day }: { day: ApiDay }) {
           </blockquote>
         )}
         <div className="mt-12 font-serif italic text-xl">{day.signoff}</div>
+        <SignatureBlock svg={day.signatureSvg} />
       </article>
+      <VoiceNoteBlock url={day.voiceNoteUrl} />
       <SongBlock day={day} />
       <Ticker />
     </PageFrame>
@@ -97,7 +130,7 @@ function MagazineLayout({ day }: { day: ApiDay }) {
           </div>
           <div className="col-span-12 sm:col-span-7">
             <div className="aspect-[4/5] overflow-hidden border hairline-cream">
-              <img src={heroForDay(day.slug, day.heroImage || undefined)} alt="" className="h-full w-full object-cover" />
+              <img src={heroForDay(day.slug, day.heroImage || undefined)} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
             </div>
           </div>
         </div>
@@ -105,6 +138,7 @@ function MagazineLayout({ day }: { day: ApiDay }) {
           {day.body}
           <div className="mt-10 italic" style={{ color: "var(--rose-dust)" }}>{day.signoff}</div>
         </article>
+        <VoiceNoteBlock url={day.voiceNoteUrl} />
       </div>
       <SongBlock day={day} />
     </PageFrame>
@@ -139,13 +173,13 @@ function DraftsLayout({ day }: { day: ApiDay }) {
         })}
         <div className="font-serif italic text-xl mt-10">{day.signoff}</div>
       </div>
+      <VoiceNoteBlock url={day.voiceNoteUrl} />
       <SongBlock day={day} />
     </PageFrame>
   );
 }
 
 function WhyYouLayout({ day }: { day: ApiDay }) {
-  // film-strip top progress (simple decoration)
   return (
     <PageFrame>
       <div className="filmstrip h-2 w-full" />
@@ -175,12 +209,41 @@ function WhyYouLayout({ day }: { day: ApiDay }) {
         </ol>
       </div>
       <div className="px-5 sm:px-10 mt-10 mb-16 font-serif italic text-xl">{day.signoff}</div>
+      <VoiceNoteBlock url={day.voiceNoteUrl} />
       <SongBlock day={day} />
     </PageFrame>
   );
 }
 
+function PolaroidGallery({ items }: { items: { url: string; caption: string }[] }) {
+  return (
+    <div className="px-5 sm:px-10 mt-10 max-w-5xl mx-auto">
+      <div className="uppercase-mono opacity-60 mb-6 text-center">a small stack of frames · pick one up</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10">
+        {items.map((g, i) => {
+          const rot = ((i * 53) % 9) - 4; // -4..+4
+          return (
+            <motion.div
+              key={i}
+              className="polaroid mx-auto w-full max-w-xs"
+              style={{ transform: `rotate(${rot}deg)` }}
+              initial={{ opacity: 0, y: 24, rotate: 0 }}
+              animate={{ opacity: 1, y: 0, rotate: rot }}
+              transition={{ delay: i * 0.08, duration: 0.7, ease: [0.2, 0.8, 0.2, 1] }}
+            >
+              <img className="ph" src={g.url || galleryFallback(i)} alt={g.caption} loading="lazy" decoding="async" />
+              <div className="cap">{g.caption || "—"}</div>
+            </motion.div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function GalleryLayout({ day }: { day: ApiDay }) {
+  const items = day.gallery ?? [];
+  const usePolaroid = items.length > 0 && items.length <= 9;
   return (
     <PageFrame>
       <BackBar index={day.index} kind={day.kind} />
@@ -189,24 +252,139 @@ function GalleryLayout({ day }: { day: ApiDay }) {
         <SplitHeading text={day.title.toUpperCase()} className="font-display leading-[0.9] mt-3" />
         <p className="font-serif italic text-xl mt-4 max-w-xl" style={{ color: "var(--mauve)" }}>{day.body}</p>
       </div>
-      <div className="px-5 sm:px-10 mt-10 max-w-6xl mx-auto bento">
-        {(day.gallery ?? []).map((g, i) => (
-          <div key={i} className={`relative overflow-hidden span-${g.span}`}>
-            <img src={g.url || galleryFallback(i)} alt={g.caption} className="absolute inset-0 h-full w-full object-cover" />
-            <div className="absolute inset-x-0 bottom-0 p-2 uppercase-mono"
-                 style={{ background: "linear-gradient(180deg, transparent, rgba(12,10,10,.7))", color: "var(--cream)" }}>
-              {g.caption}
+      {usePolaroid ? (
+        <PolaroidGallery items={items} />
+      ) : (
+        <div className="px-5 sm:px-10 mt-10 max-w-6xl mx-auto bento">
+          {items.map((g, i) => (
+            <div key={i} className={`relative overflow-hidden span-${g.span}`}>
+              <img src={g.url || galleryFallback(i)} alt={g.caption} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
+              <div className="absolute inset-x-0 bottom-0 p-2 uppercase-mono"
+                   style={{ background: "linear-gradient(180deg, transparent, rgba(12,10,10,.7))", color: "var(--cream)" }}>
+                {g.caption}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
       <div className="px-5 sm:px-10 mt-12 mb-16 font-serif italic text-xl text-center">{day.signoff}</div>
+      <VoiceNoteBlock url={day.voiceNoteUrl} />
       <SongBlock day={day} />
     </PageFrame>
   );
 }
 
+function CandleMoment({ onBlow }: { onBlow: () => void }) {
+  const [out, setOut] = useState(false);
+  const [confetti, setConfetti] = useState(false);
+  const pieces = useMemo(() => Array.from({ length: 80 }), []);
+  return (
+    <div className="text-center mt-8">
+      <div className="candle-wrap">
+        <div className={`candle ${out ? "out" : ""}`}>
+          {!out && <div className="flame" />}
+        </div>
+      </div>
+      <div className="uppercase-mono opacity-60 mt-3">{out ? "make a wish · the morning is yours" : "blow out the candle"}</div>
+      <button
+        className="btn-solid mt-4"
+        onClick={() => {
+          if (out) return;
+          setOut(true);
+          setConfetti(true);
+          onBlow();
+          window.setTimeout(() => setConfetti(false), 2600);
+        }}
+        disabled={out}
+      >
+        {out ? "wish made ♡" : "blow"}
+      </button>
+      {confetti && (
+        <div className="confetti" aria-hidden>
+          {pieces.map((_, i) => {
+            const angle = (i / pieces.length) * Math.PI * 2;
+            const dist = 220 + ((i * 37) % 260);
+            const bx = `${Math.cos(angle) * dist}px`;
+            const by = `${Math.sin(angle) * dist}px`;
+            const br = `${(i * 53) % 720 - 360}deg`;
+            const colors = ["#c47a6a", "#6b1f2a", "#c9a86a", "#d6a39b", "#f3d6cc"];
+            const bg = colors[i % colors.length];
+            const delay = `${(i % 10) * 0.02}s`;
+            return (
+              <span
+                key={i}
+                style={{
+                  ["--bx" as any]: bx,
+                  ["--by" as any]: by,
+                  ["--br" as any]: br,
+                  background: bg,
+                  animationDelay: delay,
+                }}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ReplyForm({ slug }: { slug: string }) {
+  const [text, setText] = useState("");
+  const [done, setDone] = useState(false);
+  const reply = useSendDayReply();
+  if (done) {
+    return (
+      <div className="mx-auto max-w-xl mt-10 reply-card text-center">
+        <div className="uppercase-mono opacity-60">received · slowly</div>
+        <div className="font-serif italic text-2xl mt-2" style={{ color: "var(--rose-deep)" }}>
+          your one-line reply landed.
+        </div>
+        <div className="font-serif italic mt-3" style={{ color: "var(--mauve)" }}>he'll know.</div>
+      </div>
+    );
+  }
+  return (
+    <form
+      className="mx-auto max-w-xl mt-10 reply-card"
+      onSubmit={async (e) => {
+        e.preventDefault();
+        if (!text.trim()) return;
+        try {
+          await reply.mutateAsync({ slug, data: { text: text.trim() } });
+          setDone(true);
+        } catch {
+          // ignore — keep form
+        }
+      }}
+    >
+      <div className="uppercase-mono opacity-70">leave a one-line reply</div>
+      <div className="font-serif italic text-xl mt-1" style={{ color: "var(--mauve)" }}>
+        a single sentence, anything. only he sees it.
+      </div>
+      <textarea
+        className="field mt-4"
+        rows={3}
+        maxLength={400}
+        placeholder="say one thing back…"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+      />
+      <div className="mt-4 flex items-center justify-between">
+        <span className="uppercase-mono opacity-50">{text.length}/400</span>
+        <button className="btn-solid" type="submit" disabled={reply.isPending || !text.trim()}>
+          {reply.isPending ? "sending…" : "send slowly"}
+        </button>
+      </div>
+    </form>
+  );
+}
+
 function BirthdayLayout({ day }: { day: ApiDay }) {
+  const audio = useAudio();
+  const onBlow = () => {
+    if (day.youtubeId) audio.play(day.youtubeId);
+  };
   return (
     <PageFrame>
       <BackBar index={day.index} kind={day.kind} />
@@ -226,27 +404,27 @@ function BirthdayLayout({ day }: { day: ApiDay }) {
         </div>
       </div>
 
+      <CandleMoment onBlow={onBlow} />
+
       <article className="max-w-3xl mx-auto px-5 sm:px-10 py-12 font-serif text-xl sm:text-2xl leading-[1.55] drop-cap whitespace-pre-wrap">
         {day.body}
       </article>
 
       {(day.gallery ?? []).length > 0 && (
-        <div className="px-5 sm:px-10 max-w-6xl mx-auto bento mb-12">
-          {(day.gallery ?? []).map((g, i) => (
-            <div key={i} className={`relative overflow-hidden span-${g.span}`}>
-              <img src={g.url || galleryFallback(i)} alt={g.caption} className="absolute inset-0 h-full w-full object-cover" />
-              <div className="absolute inset-x-0 bottom-0 p-2 uppercase-mono"
-                   style={{ background: "linear-gradient(180deg, transparent, rgba(12,10,10,.7))", color: "var(--cream)" }}>
-                {g.caption}
-              </div>
-            </div>
-          ))}
-        </div>
+        <PolaroidGallery items={day.gallery ?? []} />
       )}
 
-      <div className="px-5 sm:px-10 max-w-3xl mx-auto pb-12">
+      <div className="px-5 sm:px-10 max-w-3xl mx-auto pb-4">
         <div className="font-serif italic text-2xl">{day.signoff}</div>
+        <SignatureBlock svg={day.signatureSvg} />
       </div>
+
+      <VoiceNoteBlock url={day.voiceNoteUrl} />
+
+      <div className="px-5 sm:px-10 pb-16">
+        <ReplyForm slug={day.slug} />
+      </div>
+
       <SongBlock day={day} />
     </PageFrame>
   );
@@ -269,13 +447,25 @@ export default function DayPage() {
     }
   }, [day?.slug]); // eslint-disable-line
 
+  // Pingback: tell the server we opened it (once per device per slug)
+  useEffect(() => {
+    if (day?.slug) pingSeenOnce(day.slug);
+  }, [day?.slug]);
+
   useEffect(() => {
     const status = (error as any)?.status;
     if (status === 423) {
       const lock = (error as any)?.data;
-      navigate(`/locked?slug=${encodeURIComponent(slug)}&date=${encodeURIComponent(lock?.unlockDate ?? "")}`);
+      const preview = lock?.previewText ? `&preview=${encodeURIComponent(lock.previewText)}` : "";
+      navigate(`/locked?slug=${encodeURIComponent(slug)}&date=${encodeURIComponent(lock?.unlockDate ?? "")}${preview}`);
     }
   }, [error, navigate, slug]);
+
+  usePageMeta({
+    title: day ? `for yin · ${day.title}` : "for yin",
+    description: day?.pullQuote || day?.eyebrow || undefined,
+    image: day ? heroForDay(day.slug, day.heroImage || undefined) : undefined,
+  });
 
   if (isLoading || !day) {
     return (

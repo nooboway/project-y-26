@@ -7,6 +7,8 @@ import {
   useAdminUpdateLive,
   useAdminListDays,
   useAdminUpdateDay,
+  useAdminListSeen,
+  getAdminListSeenQueryKey,
   getAdminGetSiteQueryKey,
   getAdminListDaysQueryKey,
   getGetSiteQueryKey,
@@ -155,6 +157,9 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
     songTitle: day.songTitle ?? "",
     songArtist: day.songArtist ?? "",
     youtubeId: day.youtubeId ?? "",
+    signatureSvg: day.signatureSvg ?? "",
+    voiceNoteUrl: day.voiceNoteUrl ?? "",
+    previewText: day.previewText ?? "",
   };
   const [d, setD] = useState<ApiDay>(initial);
   const update = useAdminUpdateDay();
@@ -181,6 +186,9 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
         drafts,
         reasons,
         gallery,
+        signatureSvg: d.signatureSvg ?? "",
+        voiceNoteUrl: d.voiceNoteUrl ?? "",
+        previewText: d.previewText ?? "",
       },
     }, { onSuccess: () => onChanged() });
   };
@@ -222,6 +230,12 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           <input className="field" value={d.songArtist ?? ""} onChange={(e) => set({ songArtist: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">youtube id</div>
           <input className="field" value={d.youtubeId ?? ""} onChange={(e) => set({ youtubeId: e.target.value })} /></label>
+        <label><div className="uppercase-mono opacity-70 mb-1">voice note url (mp3/m4a/ogg)</div>
+          <input className="field" value={d.voiceNoteUrl ?? ""} onChange={(e) => set({ voiceNoteUrl: e.target.value })} /></label>
+        <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">preview text · whispered when locked</div>
+          <input className="field" value={d.previewText ?? ""} onChange={(e) => set({ previewText: e.target.value })} placeholder="a hint she'll see on the locked door…" /></label>
+        <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">signature svg · paste raw &lt;svg&gt;…&lt;/svg&gt; (used on letter / birthday)</div>
+          <textarea className="field" rows={4} value={d.signatureSvg ?? ""} onChange={(e) => set({ signatureSvg: e.target.value })} placeholder='<svg viewBox="0 0 200 60"><path d="M5 40 C 30 5, 80 65, 110 25 S 180 50, 195 30" /></svg>' /></label>
 
         <div className="sm:col-span-2">
           <div className="uppercase-mono opacity-70 mb-2">drafts (for kind=drafts)</div>
@@ -281,6 +295,63 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
   );
 }
 
+function SeenPanel() {
+  const headers = adminHeaders();
+  const seen = useAdminListSeen({
+    request: { headers },
+    query: { queryKey: getAdminListSeenQueryKey(), refetchInterval: 30_000 },
+  });
+  const items = seen.data ?? [];
+  const opened = items.filter((i) => i.openedAt);
+  const replied = items.filter((i) => i.replyText);
+  return (
+    <Section title="opens · replies (cross-device, polled every 30s)">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div>
+          <div className="uppercase-mono opacity-60">opened</div>
+          <div className="font-display text-5xl leading-none mt-1">{opened.length} <span className="opacity-40 text-2xl">/ {items.length}</span></div>
+        </div>
+        <div>
+          <div className="uppercase-mono opacity-60">replies received</div>
+          <div className="font-display text-5xl leading-none mt-1">{replied.length}</div>
+        </div>
+        <div>
+          <div className="uppercase-mono opacity-60">last seen</div>
+          <div className="font-serif italic text-xl mt-1">
+            {opened.length
+              ? new Date(opened.map((i) => i.openedAt!).sort().reverse()[0]).toLocaleString()
+              : "—"}
+          </div>
+        </div>
+      </div>
+      <div className="space-y-3">
+        {items.map((it) => (
+          <div key={it.slug} className="grid grid-cols-1 sm:grid-cols-[140px_1fr_180px] gap-3 items-start py-3 border-t hairline">
+            <div>
+              <div className="uppercase-mono opacity-70">{it.slug}</div>
+              <div className="font-serif italic text-lg">{it.title}</div>
+            </div>
+            <div>
+              {it.replyText ? (
+                <div>
+                  <div className="uppercase-mono opacity-60">reply</div>
+                  <div className="font-serif italic text-xl mt-1" style={{ color: "var(--rose-deep)" }}>“{it.replyText}”</div>
+                </div>
+              ) : (
+                <div className="font-serif italic opacity-50">no reply yet</div>
+              )}
+            </div>
+            <div className="uppercase-mono opacity-70 text-right">
+              {it.openedAt ? `opened · ${new Date(it.openedAt).toLocaleString()}` : "not opened"}
+              {it.replyAt && <div>replied · {new Date(it.replyAt).toLocaleString()}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 export default function Admin() {
   const [authed, setAuthed] = useState(Boolean(getAdminToken()));
   const headers = adminHeaders();
@@ -325,6 +396,8 @@ export default function Admin() {
       <div className="px-5 sm:px-10 pb-20">
         <SiteEditor onChanged={invalidateAll} />
         <LiveEditor onChanged={invalidateAll} />
+
+        <SeenPanel />
 
         <Section title="days">
           {days.data?.map((d) => <DayEditor key={d.slug} day={d} onChanged={invalidateAll} />)}

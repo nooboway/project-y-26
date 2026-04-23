@@ -24,6 +24,10 @@ export interface Day {
   songTitle?: string;
   songArtist?: string;
   youtubeId?: string;
+  signatureSvg?: string;
+  voiceNoteUrl?: string;
+  previewText?: string;
+  replyText?: string;
   drafts?: DraftItem[];
   reasons?: string[];
   gallery?: GalleryImage[];

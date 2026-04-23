@@ -7,6 +7,7 @@ import DayPage from "@/pages/Day";
 import Locked from "@/pages/Locked";
 import Archive from "@/pages/Archive";
 import Admin from "@/pages/Admin";
+import Print from "@/pages/Print";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient({
@@ -27,6 +28,7 @@ function Routes() {
       <Route path="/locked" component={Locked} />
       <Route path="/archive" component={Archive} />
       <Route path="/admin" component={Admin} />
+      <Route path="/print/all" component={Print} />
       <Route component={NotFound} />
     </Switch>
   );

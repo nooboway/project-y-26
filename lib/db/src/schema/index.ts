@@ -31,4 +31,10 @@ export const daysTable = pgTable("days", {
   drafts: jsonb("drafts").$type<{ text: string; crossed: boolean }[]>().notNull().default([]),
   reasons: jsonb("reasons").$type<string[]>().notNull().default([]),
   gallery: jsonb("gallery").$type<{ url: string; caption: string; span: "s" | "m" | "l" | "xl" }[]>().notNull().default([]),
+  signatureSvg: text("signature_svg").notNull().default(""),
+  voiceNoteUrl: text("voice_note_url").notNull().default(""),
+  previewText: text("preview_text").notNull().default(""),
+  replyText: text("reply_text").notNull().default(""),
+  replyAt: timestamp("reply_at"),
+  openedAt: timestamp("opened_at"),
 });

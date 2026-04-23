@@ -65,6 +65,8 @@ export const ListDaysResponseItem = zod.object({
   unlocked: zod.boolean(),
   isToday: zod.boolean(),
   unlockDate: zod.string(),
+  youtubeId: zod.string(),
+  previewText: zod.string(),
 });
 export const ListDaysResponse = zod.array(ListDaysResponseItem);
 
@@ -96,6 +98,10 @@ export const GetDayResponse = zod.object({
   songTitle: zod.string().optional(),
   songArtist: zod.string().optional(),
   youtubeId: zod.string().optional(),
+  signatureSvg: zod.string().optional(),
+  voiceNoteUrl: zod.string().optional(),
+  previewText: zod.string().optional(),
+  replyText: zod.string().optional(),
   drafts: zod
     .array(
       zod.object({
@@ -198,6 +204,49 @@ export const AdminUpdateLiveResponse = zod.object({
 });
 
 /**
+ * @summary Mark a day as opened (for admin pingback)
+ */
+export const MarkDaySeenParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const MarkDaySeenResponse = zod.object({
+  ok: zod.boolean(),
+  firstOpen: zod.boolean(),
+});
+
+/**
+ * @summary Save her reply for a day (only available on the birthday day)
+ */
+export const SendDayReplyParams = zod.object({
+  slug: zod.coerce.string(),
+});
+
+export const SendDayReplyBody = zod.object({
+  text: zod.string(),
+});
+
+export const SendDayReplyResponse = zod.object({
+  ok: zod.boolean(),
+});
+
+/**
+ * @summary List per-day open + reply timestamps
+ */
+export const AdminListSeenHeader = zod.object({
+  "x-admin-token": zod.string(),
+});
+
+export const AdminListSeenResponseItem = zod.object({
+  slug: zod.string(),
+  title: zod.string(),
+  openedAt: zod.string().nullable(),
+  replyAt: zod.string().nullable(),
+  replyText: zod.string(),
+});
+export const AdminListSeenResponse = zod.array(AdminListSeenResponseItem);
+
+/**
  * @summary All days, fully unlocked (admin)
  */
 export const AdminListDaysHeader = zod.object({
@@ -225,6 +274,10 @@ export const AdminListDaysResponseItem = zod.object({
   songTitle: zod.string().optional(),
   songArtist: zod.string().optional(),
   youtubeId: zod.string().optional(),
+  signatureSvg: zod.string().optional(),
+  voiceNoteUrl: zod.string().optional(),
+  previewText: zod.string().optional(),
+  replyText: zod.string().optional(),
   drafts: zod
     .array(
       zod.object({
@@ -270,6 +323,9 @@ export const AdminUpdateDayBody = zod.object({
   songTitle: zod.string().optional(),
   songArtist: zod.string().optional(),
   youtubeId: zod.string().optional(),
+  signatureSvg: zod.string().optional(),
+  voiceNoteUrl: zod.string().optional(),
+  previewText: zod.string().optional(),
   drafts: zod
     .array(
       zod.object({
@@ -311,6 +367,10 @@ export const AdminUpdateDayResponse = zod.object({
   songTitle: zod.string().optional(),
   songArtist: zod.string().optional(),
   youtubeId: zod.string().optional(),
+  signatureSvg: zod.string().optional(),
+  voiceNoteUrl: zod.string().optional(),
+  previewText: zod.string().optional(),
+  replyText: zod.string().optional(),
   drafts: zod
     .array(
       zod.object({

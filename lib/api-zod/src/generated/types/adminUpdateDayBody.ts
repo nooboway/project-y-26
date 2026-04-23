@@ -20,6 +20,9 @@ export interface AdminUpdateDayBody {
   songTitle?: string;
   songArtist?: string;
   youtubeId?: string;
+  signatureSvg?: string;
+  voiceNoteUrl?: string;
+  previewText?: string;
   drafts?: DraftItem[];
   reasons?: string[];
   gallery?: GalleryImage[];

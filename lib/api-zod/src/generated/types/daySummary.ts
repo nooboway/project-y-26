@@ -16,4 +16,6 @@ export interface DaySummary {
   unlocked: boolean;
   isToday: boolean;
   unlockDate: string;
+  youtubeId: string;
+  previewText: string;
 }
