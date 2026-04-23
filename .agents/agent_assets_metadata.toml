@@ -1,0 +1,62 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "WAl5p7jqLQmc_rtQXEATv"
+uri = "file://attached_assets/generated_images/cover-hero.png"
+type = "image"
+title = "Cover hero still life"
+
+[[generated]]
+id = "E1evBzIGxFxTqmjGviqRI"
+uri = "file://attached_assets/generated_images/birthday-floral.png"
+type = "image"
+title = "Floral macro background"
+
+[[generated]]
+id = "R-tMVhuys7g43iMefW6Ij"
+uri = "file://attached_assets/generated_images/day1-hero.png"
+type = "image"
+title = "Pressed flowers"
+
+[[generated]]
+id = "P-muE3T9ldLYLYAe2rATN"
+uri = "file://attached_assets/generated_images/day2-hero.png"
+type = "image"
+title = "Hands holding polaroid"
+
+[[generated]]
+id = "RFKoQmyRqjgAqDe2FQCEK"
+uri = "file://attached_assets/generated_images/day3-hero.png"
+type = "image"
+title = "Blurred string lights"
+
+[[generated]]
+id = "door7JUu-CvvbtQCa7zcg"
+uri = "file://attached_assets/generated_images/day4-hero.png"
+type = "image"
+title = "Open notebook"
+
+[[generated]]
+id = "O6ObV8NBiYwZuqzj3MB6a"
+uri = "file://attached_assets/generated_images/gallery-1.png"
+type = "image"
+title = "Memory still 1"
+
+[[generated]]
+id = "S_G1jHQf54PFQtoEJDaGE"
+uri = "file://attached_assets/generated_images/gallery-2.png"
+type = "image"
+title = "Memory still 2"
+
+[[generated]]
+id = "khgc1ZR7ym1l8Mt8e0nGt"
+uri = "file://attached_assets/generated_images/gallery-3.png"
+type = "image"
+title = "Memory still 3"
+
+[[generated]]
+id = "qCbZcWXpcGP9o5Voa4Ap2"
+uri = "file://attached_assets/generated_images/gallery-4.png"
+type = "image"
+title = "Memory still 4"

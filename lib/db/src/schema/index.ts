@@ -1,20 +1,34 @@
-// Export your models here. Add one export per file
-// export * from "./posts";
-//
-// Each model/table should ideally be split into different files.
-// Each model/table should define a Drizzle table, insert schema, and types:
-//
-//   import { pgTable, text, serial } from "drizzle-orm/pg-core";
-//   import { createInsertSchema } from "drizzle-zod";
-//   import { z } from "zod/v4";
-//
-//   export const postsTable = pgTable("posts", {
-//     id: serial("id").primaryKey(),
-//     title: text("title").notNull(),
-//   });
-//
-//   export const insertPostSchema = createInsertSchema(postsTable).omit({ id: true });
-//   export type InsertPost = z.infer<typeof insertPostSchema>;
-//   export type Post = typeof postsTable.$inferSelect;
+import { pgTable, text, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
 
-export {}
+export const siteConfigTable = pgTable("site_config", {
+  id: integer("id").primaryKey().default(1),
+  title: text("title").notNull(),
+  recipientName: text("recipient_name").notNull(),
+  senderName: text("sender_name").notNull(),
+  startDate: text("start_date").notNull(),
+  birthdayDate: text("birthday_date").notNull(),
+  accentColor: text("accent_color").notNull(),
+  coordinates: text("coordinates").notNull(),
+  coordinatesPlace: text("coordinates_place").notNull(),
+  unlockOverride: integer("unlock_override").notNull().default(0),
+  liveText: text("live_text").notNull().default(""),
+  liveUpdatedAt: timestamp("live_updated_at").notNull().defaultNow(),
+});
+
+export const daysTable = pgTable("days", {
+  slug: text("slug").primaryKey(),
+  index: integer("index").notNull(),
+  title: text("title").notNull(),
+  eyebrow: text("eyebrow").notNull().default(""),
+  kind: text("kind").notNull(),
+  heroImage: text("hero_image").notNull().default(""),
+  body: text("body").notNull().default(""),
+  pullQuote: text("pull_quote").notNull().default(""),
+  signoff: text("signoff").notNull().default(""),
+  songTitle: text("song_title").notNull().default(""),
+  songArtist: text("song_artist").notNull().default(""),
+  youtubeId: text("youtube_id").notNull().default(""),
+  drafts: jsonb("drafts").$type<{ text: string; crossed: boolean }[]>().notNull().default([]),
+  reasons: jsonb("reasons").$type<string[]>().notNull().default([]),
+  gallery: jsonb("gallery").$type<{ url: string; caption: string; span: "s" | "m" | "l" | "xl" }[]>().notNull().default([]),
+});

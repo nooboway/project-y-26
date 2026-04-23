@@ -3,34 +3,387 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Birthday microsite API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: site
+    description: Site config and live state
+  - name: days
+    description: Daily content
+  - name: admin
+    description: Admin write operations (passphrase-gated)
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
           content:
             application/json:
+              schema: { $ref: "#/components/schemas/HealthStatus" }
+
+  /site:
+    get:
+      operationId: getSite
+      tags: [site]
+      summary: Site config and live state (computed server-side)
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SiteState" }
+
+  /live:
+    get:
+      operationId: getLiveMessage
+      tags: [site]
+      summary: Live "from him right now" message (polled)
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveMessage" }
+
+  /days:
+    get:
+      operationId: listDays
+      tags: [days]
+      summary: List days (locked stubs for future days)
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
               schema:
-                $ref: "#/components/schemas/HealthStatus"
+                type: array
+                items: { $ref: "#/components/schemas/DaySummary" }
+
+  /days/{slug}:
+    get:
+      operationId: getDay
+      tags: [days]
+      summary: Get a single day. Returns 423 if locked.
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Day" }
+        "423":
+          description: Locked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LockedDay" }
+
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Verify admin passphrase, returns a token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminLoginBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminToken" }
+        "401":
+          description: Wrong passphrase
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorBody" }
+
+  /admin/site:
+    get:
+      operationId: adminGetSite
+      tags: [admin]
+      summary: Full site config (admin)
+      parameters:
+        - { in: header, name: x-admin-token, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminSiteConfig" }
+    put:
+      operationId: adminUpdateSite
+      tags: [admin]
+      summary: Update site config (admin)
+      parameters:
+        - { in: header, name: x-admin-token, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdateSiteBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AdminSiteConfig" }
+
+  /admin/live:
+    put:
+      operationId: adminUpdateLive
+      tags: [admin]
+      summary: Update the live "right now" message
+      parameters:
+        - { in: header, name: x-admin-token, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdateLiveBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/LiveMessage" }
+
+  /admin/days:
+    get:
+      operationId: adminListDays
+      tags: [admin]
+      summary: All days, fully unlocked (admin)
+      parameters:
+        - { in: header, name: x-admin-token, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Day" }
+
+  /admin/days/{slug}:
+    put:
+      operationId: adminUpdateDay
+      tags: [admin]
+      summary: Update a day's content (admin)
+      parameters:
+        - { in: header, name: x-admin-token, required: true, schema: { type: string } }
+        - { in: path, name: slug, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AdminUpdateDayBody" }
+      responses:
+        "200":
+          description: ok
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Day" }
+
 components:
   schemas:
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
+        status: { type: string }
+      required: [status]
 
+    ErrorBody:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
+
+    SiteState:
+      type: object
+      description: Public site state, computed on the server
+      properties:
+        title: { type: string }
+        recipientName: { type: string }
+        senderName: { type: string }
+        startDate: { type: string, description: "ISO date" }
+        birthdayDate: { type: string, description: "ISO date" }
+        accentColor: { type: string }
+        coordinates: { type: string, description: "e.g. 40.7128°N 74.0060°W" }
+        coordinatesPlace: { type: string }
+        serverNow: { type: string, description: "ISO datetime, server time" }
+        currentDayIndex:
+          type: integer
+          description: "0 = before start, 1..N = day N unlocked, N+1 = aftermath"
+        totalDays: { type: integer }
+        isBirthday: { type: boolean }
+        isAftermath: { type: boolean }
+        secondsUntilBirthday: { type: integer }
+      required:
+        [title, recipientName, senderName, startDate, birthdayDate, accentColor,
+         coordinates, coordinatesPlace, serverNow, currentDayIndex, totalDays,
+         isBirthday, isAftermath, secondsUntilBirthday]
+
+    LiveMessage:
+      type: object
+      properties:
+        text: { type: string }
+        updatedAt: { type: string }
+      required: [text, updatedAt]
+
+    DaySummary:
+      type: object
+      properties:
+        slug: { type: string }
+        index: { type: integer }
+        title: { type: string }
+        eyebrow: { type: string }
+        kind:
+          type: string
+          enum: [letter, magazine, drafts, why-you, gallery, birthday]
+        unlocked: { type: boolean }
+        isToday: { type: boolean }
+        unlockDate: { type: string }
+      required: [slug, index, title, eyebrow, kind, unlocked, isToday, unlockDate]
+
+    LockedDay:
+      type: object
+      properties:
+        slug: { type: string }
+        index: { type: integer }
+        unlockDate: { type: string }
+        message: { type: string }
+      required: [slug, index, unlockDate, message]
+
+    GalleryImage:
+      type: object
+      properties:
+        url: { type: string }
+        caption: { type: string }
+        span:
+          type: string
+          enum: [s, m, l, xl]
+      required: [url, caption, span]
+
+    DraftItem:
+      type: object
+      properties:
+        text: { type: string }
+        crossed: { type: boolean }
+      required: [text, crossed]
+
+    Day:
+      type: object
+      properties:
+        slug: { type: string }
+        index: { type: integer }
+        title: { type: string }
+        eyebrow: { type: string }
+        kind:
+          type: string
+          enum: [letter, magazine, drafts, why-you, gallery, birthday]
+        unlockDate: { type: string }
+        heroImage: { type: string }
+        body: { type: string, description: "Long-form prose, markdown-ish" }
+        pullQuote: { type: string }
+        signoff: { type: string }
+        songTitle: { type: string }
+        songArtist: { type: string }
+        youtubeId: { type: string }
+        drafts:
+          type: array
+          items: { $ref: "#/components/schemas/DraftItem" }
+        reasons:
+          type: array
+          items: { type: string }
+        gallery:
+          type: array
+          items: { $ref: "#/components/schemas/GalleryImage" }
+      required:
+        [slug, index, title, eyebrow, kind, unlockDate, body]
+
+    AdminLoginBody:
+      type: object
+      properties:
+        passphrase: { type: string }
+      required: [passphrase]
+
+    AdminToken:
+      type: object
+      properties:
+        token: { type: string }
+      required: [token]
+
+    AdminSiteConfig:
+      type: object
+      properties:
+        title: { type: string }
+        recipientName: { type: string }
+        senderName: { type: string }
+        startDate: { type: string }
+        birthdayDate: { type: string }
+        accentColor: { type: string }
+        coordinates: { type: string }
+        coordinatesPlace: { type: string }
+        unlockOverride:
+          type: integer
+          description: "0 = none, otherwise force currentDayIndex to this value"
+      required:
+        [title, recipientName, senderName, startDate, birthdayDate, accentColor,
+         coordinates, coordinatesPlace, unlockOverride]
+
+    AdminUpdateSiteBody:
+      type: object
+      properties:
+        title: { type: string }
+        recipientName: { type: string }
+        senderName: { type: string }
+        startDate: { type: string }
+        birthdayDate: { type: string }
+        accentColor: { type: string }
+        coordinates: { type: string }
+        coordinatesPlace: { type: string }
+        unlockOverride: { type: integer }
+
+    AdminUpdateLiveBody:
+      type: object
+      properties:
+        text: { type: string }
+      required: [text]
+
+    AdminUpdateDayBody:
+      type: object
+      properties:
+        title: { type: string }
+        eyebrow: { type: string }
+        kind:
+          type: string
+          enum: [letter, magazine, drafts, why-you, gallery, birthday]
+        heroImage: { type: string }
+        body: { type: string }
+        pullQuote: { type: string }
+        signoff: { type: string }
+        songTitle: { type: string }
+        songArtist: { type: string }
+        youtubeId: { type: string }
+        drafts:
+          type: array
+          items: { $ref: "#/components/schemas/DraftItem" }
+        reasons:
+          type: array
+          items: { type: string }
+        gallery:
+          type: array
+          items: { $ref: "#/components/schemas/GalleryImage" }

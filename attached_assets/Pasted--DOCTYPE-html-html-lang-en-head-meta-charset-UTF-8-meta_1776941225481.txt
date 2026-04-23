@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>For Yin 🌸</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400;1,600&family=DM+Sans:wght@300;400;500&family=Syne:wght@400;700;800&family=Playfair+Display:ital,wght@0,400;1,400;1,700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --blush: #f5e6e0;
+  --rose: #e8b4a0;
+  --deep: #c47a6a;
+  --petal: #fdf0ec;
+  --cream: #faf6f3;
+  --mauve: #9e6b72;
+  --text: #1a0f0f;
+  --soft: #8a6a6a;
+  --gold: #c9956c;
+  --black: #0d0808;
+  --ink: #1c1010;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--petal);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  overflow-x: hidden;
+  min-height: 100vh;
+}
+a { text-decoration: none; color: inherit; }
+
+body::after {
+  content: '';
+  position: fixed; inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none; z-index: 9998; opacity: 0.35;
+}
+
+#petal-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+#confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 9997; display: none; }
+
+#music-btn {
+  position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+  width: 46px; height: 46px; border-radius: 50%;
+  background: white; border: 1.5px solid var(--rose);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 4px 20px rgba(196,122,106,0.25);
+  transition: transform 0.2s;
+}
+#music-btn:hover { transform: scale(1.1); }
+#music-btn.playing { animation: pulse-ring 2.5s infinite; }
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(196,122,106,0.5); }
+  70%  { box-shadow: 0 0 0 14px rgba(196,122,106,0); }
+  100% { box-shadow: 0 0 0 0 rgba(196,122,106,0); }
+}
+
+.screen { display: none; min-height: 100vh; position: relative; z-index: 1; }
+.screen.active { display: block; }
+
+.back-btn {
+  position: fixed; top: 20px; left: 20px; z-index: 500;
+  background: rgba(255,255,255,0.85); backdrop-filter: blur(8px);
+  border: 1px solid rgba(196,122,106,0.3); border-radius: 30px;
+  padding: 8px 18px; font-size: 11px; letter-spacing: 0.18em;
+  text-transform: uppercase; color: var(--soft); cursor: pointer;
+  transition: all 0.2s; font-family: 'DM Sans', sans-serif;
+}
+.back-btn:hover { background: white; color: var(--deep); border-color: var(--deep); }
+
+/* ══ HOME ══ */
+#home {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  min-height: 100vh; padding: 40px 24px;
+  text-align: center;
+  background: linear-gradient(160deg, #fdf0ec 0%, #f5e6e0 60%, #fceee8 100%);
+}
+.home-flower { font-size: 52px; margin-bottom: 20px; animation: float 4s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+.home-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(56px, 14vw, 110px);
+  line-height: 0.88; letter-spacing: 0.02em;
+  color: var(--text); margin-bottom: 6px;
+}
+.home-title span { color: var(--deep); }
+.home-sub {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(16px, 3vw, 22px);
+  font-style: italic; font-weight: 300;
+  color: var(--soft); margin-bottom: 44px;
+  letter-spacing: 0.05em;
+}
+
+/* Pips */
+.pips { display: flex; gap: 10px; justify-content: center; margin-bottom: 40px; flex-wrap: wrap; }
+.pip {
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 1.5px solid var(--rose);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; background: white; cursor: default;
+  transition: all 0.3s; position: relative;
+}
+/* TODAY = open, clickable */
+.pip.today {
+  background: var(--deep); border-color: var(--deep);
+  box-shadow: 0 0 0 5px rgba(196,122,106,0.2);
+  animation: pip-glow 2s infinite; cursor: pointer;
+}
+/* PAST = locked, faded out, no click */
+.pip.past { opacity: 0.2; cursor: not-allowed; filter: grayscale(1); }
+/* FUTURE = locked, subtle */
+.pip.future { opacity: 0.3; cursor: not-allowed; }
+/* Birthday (day 5) today */
+.pip.today.bday { background: linear-gradient(135deg, var(--deep), var(--gold)); border: none; }
+@keyframes pip-glow {
+  0%,100% { box-shadow: 0 0 0 5px rgba(196,122,106,0.2); }
+  50%      { box-shadow: 0 0 0 10px rgba(196,122,106,0.08); }
+}
+.pip-label {
+  position: absolute; bottom: -20px; left: 50%; transform: translateX(-50%);
+  font-size: 8px; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--soft); white-space: nowrap;
+}
+
+.open-btn {
+  background: var(--deep); color: white; border: none;
+  padding: 16px 52px; border-radius: 60px; cursor: pointer;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 20px; font-style: italic; letter-spacing: 0.05em;
+  box-shadow: 0 8px 32px rgba(196,122,106,0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
+  margin-bottom: 36px;
+}
+.open-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(196,122,106,0.45); }
+.open-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+.countdown-wrap {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 12px; color: var(--soft);
+  letter-spacing: 0.12em; text-transform: uppercase;
+}
+#timer {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 32px; color: var(--deep);
+  letter-spacing: 0.08em; display: block; margin-top: 4px;
+}
+
+/* "Not today" lock message */
+.lock-msg {
+  margin-top: 28px; max-width: 360px;
+  background: white; border-radius: 16px;
+  border: 1px solid rgba(232,180,160,0.35);
+  padding: 20px 24px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 17px; font-style: italic; color: var(--soft);
+  line-height: 1.6; display: none;
+}
+.lock-msg strong { color: var(--deep); font-style: normal; }
+
+#live-home-msg {
+  margin-top: 28px; max-width: 340px;
+  background: white; border-radius: 16px;
+  border: 1px solid rgba(232,180,160,0.4);
+  padding: 16px 20px; display: none;
+}
+.live-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--deep); margin-bottom: 6px;
+}
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--deep); animation: blink 1.5s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+.live-text {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px; font-style: italic; color: var(--text); line-height: 1.5;
+}
+
+/* ══ DAY 1 ══ */
+#day1 { background: #f7f2ee; min-height: 100vh; }
+.d1-hero {
+  background: var(--black); padding: 80px 32px 48px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.d1-hero::before {
+  content: 'YIN'; font-family: 'Bebas Neue', sans-serif;
+  font-size: 38vw; line-height: 0.85; color: rgba(255,255,255,0.04);
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  white-space: nowrap; pointer-events: none;
+}
+.d1-big {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(54px, 13vw, 130px);
+  line-height: 0.88; letter-spacing: 0.02em; color: white;
+}
+.d1-big span { color: var(--rose); }
+.d1-big .outline { -webkit-text-stroke: 2px white; color: transparent; }
+.d1-big .outline-rose { -webkit-text-stroke: 2px var(--rose); color: transparent; }
+.d1-tagline {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px; font-style: italic; color: rgba(255,255,255,0.5);
+  letter-spacing: 0.1em; margin-top: 16px;
+}
+.d1-strip { background: var(--rose); color: var(--black); padding: 10px 0; overflow: hidden; }
+.d1-strip-inner {
+  display: inline-block; white-space: nowrap;
+  animation: ticker 18s linear infinite;
+  font-family: 'Bebas Neue', sans-serif; font-size: 20px; letter-spacing: 0.12em;
+}
+.d1-strip-inner span { margin: 0 32px; }
+@keyframes ticker { from{transform:translateX(0)} to{transform:translateX(-50%)} }
+.d1-cards { padding: 40px 20px 60px; display: flex; flex-direction: column; gap: 16px; max-width: 700px; margin: 0 auto; }
+.d1-card {
+  background: white; border-radius: 0; border-top: 3px solid var(--rose);
+  padding: 28px 28px 24px; position: relative; overflow: hidden;
+  cursor: pointer; transition: transform 0.3s;
+}
+.d1-card:hover { transform: translateX(6px); }
+.d1-card::after {
+  content: attr(data-n); font-family: 'Bebas Neue', sans-serif;
+  font-size: 120px; color: rgba(196,122,106,0.06);
+  position: absolute; right: -10px; bottom: -20px; line-height: 1; pointer-events: none;
+}
+.d1-card-label { font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--rose); margin-bottom: 10px; }
+.d1-card-text { font-family: 'Cormorant Garamond', serif; font-size: 20px; line-height: 1.75; color: var(--text); }
+.d1-card-text em { color: var(--deep); font-style: italic; }
+.egg { cursor: pointer; position: relative; border-bottom: 1px dashed rgba(196,122,106,0.4); transition: color 0.2s; }
+.egg:hover { color: var(--deep); }
+.egg-hearts { position: fixed; pointer-events: none; z-index: 9999; }
+.egg-heart { position: absolute; font-size: 20px; animation: heart-float 1.4s ease-out forwards; }
+@keyframes heart-float {
+  0%   { opacity: 1; transform: translateY(0) scale(0.5); }
+  50%  { opacity: 1; transform: translateY(-60px) scale(1.1); }
+  100% { opacity: 0; transform: translateY(-120px) scale(0.8); }
+}
+.d1-secret {
+  display: none; margin-top: 12px;
+  background: #f9f0ec; padding: 12px;
+  border: 1px solid rgba(232,180,160,0.4);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 14px; font-style: italic;
+  color: var(--soft); border-radius: 4px;
+  animation: fade-up 0.4s ease;
+}
+
+/* ══ DAY 2 ══ */
+#day2 { background: #1a0e0e; color: #e8d8d0; min-height: 100vh; }
+.d2-header { padding: 80px 32px 40px; border-bottom: 1px solid rgba(232,180,160,0.15); }
+.d2-issue {
+  font-size: 9px; letter-spacing: 0.4em; text-transform: uppercase;
+  color: var(--rose); margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.d2-issue::before, .d2-issue::after { content: ''; flex: 1; height: 1px; background: rgba(232,180,160,0.2); }
+.d2-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(40px, 9vw, 88px);
+  font-style: italic; font-weight: 700; line-height: 1.0; color: #f0e4dc;
+  max-width: 600px; margin: 0 auto; text-align: center;
+}
+.d2-title span { color: var(--rose); }
+.d2-sub { text-align: center; margin-top: 20px; font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(232,180,160,0.4); }
+.d2-body { max-width: 640px; margin: 0 auto; padding: 48px 28px 80px; }
+.d2-prose { font-family: 'Cormorant Garamond', serif; font-size: clamp(18px, 2.5vw, 22px); font-weight: 300; line-height: 1.9; color: #c8b0a8; }
+.d2-prose p { margin-bottom: 1.5em; }
+.d2-prose strong { color: #f0d0c0; font-weight: 400; }
+.d2-prose em { font-style: italic; color: var(--rose); }
+.d2-pull {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(24px, 4vw, 38px); font-style: italic;
+  color: rgba(232,180,160,0.6); text-align: center; padding: 40px 0;
+  border-top: 1px solid rgba(232,180,160,0.12);
+  border-bottom: 1px solid rgba(232,180,160,0.12);
+  margin: 40px 0; line-height: 1.4;
+}
+.d2-leak {
+  position: fixed; top: 0; right: 0; width: 300px; height: 100vh;
+  background: radial-gradient(ellipse at 100% 30%, rgba(201,149,108,0.12) 0%, transparent 60%);
+  pointer-events: none; z-index: 0;
+}
+.d2-filmstrip { display: flex; gap: 4px; margin: 32px 0; overflow: hidden; }
+.d2-frame {
+  flex: 1; aspect-ratio: 1; background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.06); border-radius: 2px; min-width: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; opacity: 0.3;
+}
+
+/* ══ DAY 3 ══ */
+#day3 { background: #fdf8f2; min-height: 100vh; }
+.d3-header {
+  padding: 72px 28px 32px; text-align: center;
+  background: linear-gradient(180deg, #fceae4 0%, transparent 100%);
+  position: relative; overflow: hidden;
+}
+.d3-header::before {
+  content: '"'; font-family: 'Playfair Display', serif; font-size: 300px; line-height: 0.7;
+  color: rgba(196,122,106,0.07); position: absolute; top: -20px; left: -20px; pointer-events: none;
+}
+.d3-eyebrow { font-size: 9px; letter-spacing: 0.35em; text-transform: uppercase; color: var(--rose); margin-bottom: 14px; }
+.d3-title { font-family: 'Playfair Display', serif; font-size: clamp(36px, 8vw, 72px); font-style: italic; color: var(--text); line-height: 1.0; }
+.d3-title span { color: var(--deep); }
+.d3-body { max-width: 680px; margin: 0 auto; padding: 32px 20px 80px; }
+.draft {
+  position: relative; margin-bottom: 20px; background: white;
+  padding: 30px 28px 26px 32px; border-radius: 2px;
+  box-shadow: 2px 3px 18px rgba(196,122,106,0.08), -1px -1px 0 rgba(196,122,106,0.06);
+  cursor: pointer; transition: box-shadow 0.3s, transform 0.3s;
+}
+.draft:nth-child(odd)  { transform: rotate(-0.4deg); }
+.draft:nth-child(even) { transform: rotate(0.3deg); }
+.draft:hover { transform: rotate(0) scale(1.01); box-shadow: 4px 6px 28px rgba(196,122,106,0.16); }
+.draft::before {
+  content: ''; position: absolute; inset: 0;
+  background-image: repeating-linear-gradient(transparent, transparent 27px, rgba(196,122,106,0.08) 28px);
+  border-radius: 2px; pointer-events: none;
+}
+.draft::after { content: ''; position: absolute; top: 0; left: 24px; bottom: 0; width: 1px; background: rgba(196,122,106,0.18); }
+.draft-stamp { display: inline-flex; align-items: center; gap: 6px; font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--rose); margin-bottom: 10px; position: relative; z-index: 1; }
+.draft-stamp .pill { background: rgba(232,180,160,0.2); padding: 2px 8px; border-radius: 20px; }
+.draft-body { font-family: 'Cormorant Garamond', serif; font-size: 19px; line-height: 1.8; color: var(--text); position: relative; z-index: 1; }
+.draft-body s { opacity: 0.3; }
+.draft-body em { color: var(--deep); font-style: italic; }
+.draft-body strong { color: var(--deep); }
+.draft-hidden {
+  display: none; margin-top: 14px; padding-top: 14px;
+  border-top: 1px dashed rgba(196,122,106,0.3);
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 15px; font-style: italic; color: var(--soft);
+  line-height: 1.6; position: relative; z-index: 1;
+  animation: fade-up 0.5s ease;
+}
+.tap-hint {
+  text-align: center; margin: 8px 0 32px;
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(196,122,106,0.4); animation: fade-blink 2s infinite;
+}
+@keyframes fade-blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ══ DAY 4 ══ */
+#day4 { background: var(--black); color: #e8d8d0; min-height: 100vh; }
+.d4-header { padding: 80px 32px 48px; border-bottom: 1px solid rgba(255,255,255,0.06); position: relative; overflow: hidden; }
+.d4-header::after {
+  content: 'WHY YOU.'; font-family: 'Bebas Neue', sans-serif;
+  font-size: 18vw; line-height: 0.85; color: rgba(255,255,255,0.03);
+  position: absolute; bottom: -10px; left: 20px;
+  white-space: nowrap; pointer-events: none; letter-spacing: 0.01em;
+}
+.d4-eyebrow { font-size: 9px; letter-spacing: 0.4em; text-transform: uppercase; color: var(--rose); margin-bottom: 20px; }
+.d4-title { font-family: 'Bebas Neue', sans-serif; font-size: clamp(52px, 12vw, 110px); line-height: 0.88; letter-spacing: 0.02em; color: white; }
+.d4-title .outline { -webkit-text-stroke: 1.5px rgba(255,255,255,0.4); color: transparent; }
+.d4-intro { font-family: 'Cormorant Garamond', serif; font-size: 17px; font-style: italic; color: rgba(232,180,160,0.6); max-width: 420px; line-height: 1.7; margin-top: 20px; }
+.d4-list { padding: 0 28px 80px; max-width: 700px; margin: 0 auto; }
+.d4-item {
+  display: grid; grid-template-columns: 80px 1fr; gap: 20px; align-items: start;
+  padding: 36px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  cursor: pointer; transition: opacity 0.3s;
+}
+.d4-item:hover .d4-n { color: var(--rose); }
+.d4-item:last-child { border-bottom: none; }
+.d4-n { font-family: 'Bebas Neue', sans-serif; font-size: 72px; line-height: 0.85; color: rgba(255,255,255,0.1); transition: color 0.3s; padding-top: 4px; }
+.d4-reason-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--rose); margin-bottom: 10px; }
+.d4-reason-text { font-family: 'Cormorant Garamond', serif; font-size: 20px; line-height: 1.8; color: rgba(232,180,160,0.75); }
+.d4-reason-text em { color: #f0d0c0; font-style: italic; }
+.d4-extra {
+  display: none; margin-top: 12px;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 16px; font-style: italic; color: var(--rose);
+  line-height: 1.6; animation: fade-up 0.4s ease;
+}
+
+/* ══ DAY 5 ══ */
+#day5 { background: var(--petal); min-height: 100vh; }
+#envelope-gate {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 100vh; padding: 40px;
+  text-align: center;
+  background: linear-gradient(160deg, #fdf0ec, #f5e6e0, #fceee8);
+}
+.env-icon {
+  font-size: 90px; cursor: pointer;
+  animation: sway 3s ease-in-out infinite;
+  transition: transform 0.2s; display: block; margin-bottom: 16px;
+}
+.env-icon:hover { animation: none; transform: scale(1.15) rotate(-5deg); }
+@keyframes sway { 0%,100%{transform:rotate(-4deg)} 50%{transform:rotate(4deg)} }
+.env-hint { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic; color: var(--soft); animation: fade-blink 2.5s infinite; }
+#bday-main { display: none; }
+.d5-cover {
+  background: var(--black); padding: 70px 28px 52px;
+  text-align: center; position: relative; overflow: hidden;
+}
+.d5-cover::before {
+  content: ''; position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 30% 60%, rgba(201,149,108,0.15) 0%, transparent 55%),
+              radial-gradient(ellipse at 80% 20%, rgba(196,122,106,0.1) 0%, transparent 45%);
+  pointer-events: none;
+}
+.d5-bday-word { font-size: 10px; letter-spacing: 0.5em; text-transform: uppercase; color: var(--rose); margin-bottom: 12px; }
+.d5-name-big { font-family: 'Bebas Neue', sans-serif; font-size: clamp(64px, 18vw, 160px); line-height: 0.85; color: white; letter-spacing: 0.03em; }
+.d5-name-big .outline { -webkit-text-stroke: 2px var(--rose); color: transparent; }
+.d5-sub-words { font-family: 'Cormorant Garamond', serif; font-size: clamp(18px, 3.5vw, 30px); font-style: italic; color: rgba(255,255,255,0.55); margin-top: 10px; letter-spacing: 0.05em; }
+.d5-date { font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: 0.35em; text-transform: uppercase; color: rgba(196,122,106,0.5); margin-top: 20px; }
+.d5-grid-wrap { padding: 24px 16px; }
+.d5-grid { display: grid; grid-template-columns: repeat(6, 1fr); grid-template-rows: auto auto; gap: 8px; }
+.d5-photo { overflow: hidden; border-radius: 4px; cursor: pointer; position: relative; transition: transform 0.4s ease; }
+.d5-photo:hover { transform: scale(1.03); z-index: 2; }
+.d5-photo:nth-child(1) { grid-column: span 3; aspect-ratio: 3/2; }
+.d5-photo:nth-child(2) { grid-column: span 2; aspect-ratio: 1; }
+.d5-photo:nth-child(3) { grid-column: span 1; aspect-ratio: 1; }
+.d5-photo:nth-child(4) { grid-column: span 2; aspect-ratio: 1; }
+.d5-photo:nth-child(5) { grid-column: span 2; aspect-ratio: 1; }
+.d5-photo:nth-child(6) { grid-column: span 2; aspect-ratio: 1; }
+.d5-placeholder { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; }
+.d5-ph-1 { background: linear-gradient(135deg, #e8b4a0, #c47a6a); }
+.d5-ph-2 { background: linear-gradient(135deg, #9e6b72, #c47a6a); }
+.d5-ph-3 { background: linear-gradient(135deg, #c9956c, #e8b4a0); }
+.d5-ph-4 { background: linear-gradient(135deg, #f5e6e0, #e8b4a0); }
+.d5-ph-5 { background: linear-gradient(135deg, #1a0e0e, #3a1e1e); }
+.d5-ph-6 { background: linear-gradient(135deg, #c47a6a, #9e6b72); }
+.d5-placeholder span { font-size: 26px; opacity: 0.5; }
+.d5-placeholder small { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; color: rgba(255,255,255,0.6); }
+.d5-letter-section { padding: 20px 20px 60px; max-width: 700px; margin: 0 auto; }
+.d5-letter {
+  background: white; border-radius: 20px; padding: 48px 44px;
+  box-shadow: 0 16px 60px rgba(196,122,106,0.15);
+  border: 1px solid rgba(232,180,160,0.25); position: relative; overflow: hidden;
+}
+.d5-letter::before {
+  content: '❝'; font-family: 'Playfair Display', serif;
+  font-size: 100px; color: rgba(196,122,106,0.08);
+  position: absolute; top: 8px; left: 20px; line-height: 1;
+}
+.letter-from { font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--rose); margin-bottom: 20px; }
+.letter-greeting { font-family: 'Playfair Display', serif; font-size: 22px; font-style: italic; color: var(--deep); margin-bottom: 24px; }
+.letter-prose { font-family: 'Cormorant Garamond', serif; font-size: 20px; line-height: 1.85; color: var(--text); }
+.letter-prose p { margin-bottom: 1.3em; }
+.letter-prose strong { color: var(--deep); }
+.letter-close { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-style: italic; color: var(--soft); margin-top: 28px; }
+.letter-sig { font-family: 'Playfair Display', serif; font-size: 32px; font-style: italic; color: var(--deep); margin-top: 6px; }
+#live-day5 { background: var(--black); border-radius: 20px; padding: 32px; margin: 0 20px 40px; display: none; }
+.live-day5-label { display: flex; align-items: center; gap: 8px; font-size: 9px; letter-spacing: 0.3em; text-transform: uppercase; color: var(--rose); margin-bottom: 12px; }
+.live-day5-text { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-style: italic; color: #e8d0c8; line-height: 1.7; }
+.d5-barcode-strip { display: flex; align-items: center; justify-content: space-between; padding: 20px 28px; border-top: 1px solid rgba(196,122,106,0.2); margin-top: 40px; }
+.barcode-svg { opacity: 0.25; }
+.d5-since { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: var(--soft); }
+.d5-forever { font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700; letter-spacing: 0.25em; text-transform: uppercase; color: var(--deep); }
+
+/* ══ LIGHTBOX ══ */
+#lightbox { display: none; position: fixed; inset: 0; background: rgba(10,5,5,0.92); z-index: 9996; align-items: center; justify-content: center; }
+#lightbox.open { display: flex; }
+#lightbox img { max-width: 92vw; max-height: 88vh; border-radius: 8px; object-fit: contain; }
+#lightbox-close { position: absolute; top: 20px; right: 28px; font-size: 36px; color: rgba(255,255,255,0.6); cursor: pointer; line-height: 1; transition: color 0.2s; }
+#lightbox-close:hover { color: white; }
+
+/* ══ ADMIN PANEL ══ */
+#admin-panel { display: none; position: fixed; inset: 0; background: rgba(10,5,5,0.92); z-index: 10000; align-items: center; justify-content: center; padding: 20px; }
+#admin-panel.open { display: flex; }
+.admin-box { background: white; border-radius: 16px; padding: 32px; max-width: 440px; width: 100%; box-shadow: 0 24px 80px rgba(0,0,0,0.4); }
+.admin-title { font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text); margin-bottom: 20px; }
+.admin-field { margin-bottom: 14px; }
+.admin-field label { font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--soft); display: block; margin-bottom: 6px; }
+.admin-field input, .admin-field textarea { width: 100%; border: 1.5px solid rgba(196,122,106,0.3); border-radius: 8px; padding: 10px 14px; font-family: 'Cormorant Garamond', serif; font-size: 16px; color: var(--text); outline: none; transition: border-color 0.2s; resize: vertical; }
+.admin-field input:focus, .admin-field textarea:focus { border-color: var(--deep); }
+.admin-btns { display: flex; gap: 10px; margin-top: 18px; }
+.admin-save { flex: 1; background: var(--deep); color: white; border: none; border-radius: 8px; padding: 12px; cursor: pointer; font-family: 'Syne', sans-serif; font-size: 12px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; transition: opacity 0.2s; }
+.admin-save:hover { opacity: 0.85; }
+.admin-cancel { background: none; border: 1.5px solid rgba(196,122,106,0.3); border-radius: 8px; padding: 12px 20px; cursor: pointer; font-family: 'Syne', sans-serif; font-size: 12px; color: var(--soft); letter-spacing: 0.1em; text-transform: uppercase; }
+.admin-status { font-size: 11px; color: var(--deep); margin-top: 8px; display: none; }
+
+/* ══ SHARED ANIMS ══ */
+.fade-in { opacity: 0; transform: translateY(24px); animation: fade-up 0.8s ease forwards; }
+@keyframes fade-up { to { opacity: 1; transform: translateY(0); } }
+.fade-in-1 { animation-delay: 0.05s; }
+.fade-in-2 { animation-delay: 0.2s; }
+.fade-in-3 { animation-delay: 0.35s; }
+.fade-in-4 { animation-delay: 0.5s; }
+.fade-in-5 { animation-delay: 0.68s; }
+
+@media (max-width: 560px) {
+  .d5-grid { grid-template-columns: repeat(4, 1fr); }
+  .d5-photo:nth-child(1) { grid-column: span 4; aspect-ratio: 4/3; }
+  .d5-photo:nth-child(2) { grid-column: span 2; }
+  .d5-photo:nth-child(3) { grid-column: span 2; }
+  .d5-photo:nth-child(4) { grid-column: span 2; }
+  .d5-photo:nth-child(5) { grid-column: span 2; }
+  .d5-photo:nth-child(6) { grid-column: span 4; aspect-ratio: 2/1; }
+  .d5-letter { padding: 28px 22px; }
+  .d4-item { grid-template-columns: 52px 1fr; }
+  .d4-n { font-size: 52px; }
+}
+</style>
+</head>
+<body>
+
+<canvas id="petal-canvas"></canvas>
+<canvas id="confetti-canvas"></canvas>
+<button id="music-btn">🎵</button>
+<div id="egg-hearts" class="egg-hearts"></div>
+
+<!-- LIGHTBOX -->
+<div id="lightbox">
+  <span id="lightbox-close" onclick="closeLB()">×</span>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="admin-panel">
+  <div class="admin-box">
+    <div class="admin-title">✉️ Send a message to Yin</div>
+    <div class="admin-field">
+      <label>Password</label>
+      <input type="password" id="admin-pw" placeholder="Enter password">
+    </div>
+    <div class="admin-field">
+      <label>Your message (shows live on her screen)</label>
+      <textarea id="admin-msg" rows="4" placeholder="Hey Yin, just thinking about you…"></textarea>
+    </div>
+    <div class="admin-btns">
+      <button class="admin-save" onclick="saveMessage()">Send Live 💌</button>
+      <button class="admin-cancel" onclick="closeAdmin()">Cancel</button>
+    </div>
+    <div id="admin-status" class="admin-status"></div>
+  </div>
+</div>
+
+<!-- ══ HOME ══ -->
+<div id="home" class="screen active">
+  <div class="home-flower">🌸</div>
+  <h1 class="home-title fade-in fade-in-1">For<br><span>Yin.</span></h1>
+  <p class="home-sub fade-in fade-in-2">five days. just for you.</p>
+  <div class="pips fade-in fade-in-3" id="pips-container"></div>
+  <button class="open-btn fade-in fade-in-4" id="open-today-btn" onclick="openToday()">Open today's letter ✉️</button>
+  <div class="countdown-wrap fade-in fade-in-5">
+    <span id="countdown-label">days until your birthday</span>
+    <span id="timer"></span>
+  </div>
+  <div class="lock-msg" id="lock-msg"></div>
+  <div id="live-home-msg">
+    <div class="live-badge"><span class="live-dot"></span> Live from Jae</div>
+    <div class="live-text" id="live-home-text"></div>
+  </div>
+</div>
+
+<!-- ══ DAY 1 ══ -->
+<div id="day1" class="screen">
+  <button class="back-btn" onclick="goHome()">← Back</button>
+  <div class="d1-hero">
+    <p class="d1-tagline fade-in">Day 01 of 05 · The Warm-Up · May 25</p>
+    <div class="d1-big fade-in fade-in-2">
+      <div>THINGS I'VE</div>
+      <div class="outline"><span class="outline-rose">DEFINITELY</span></div>
+      <div>NOT <span>NOTICED.</span></div>
+    </div>
+  </div>
+  <div class="d1-strip">
+    <div class="d1-strip-inner">
+      <span>FOR YIN</span><span>♡</span><span>DAY ONE</span><span>♡</span>
+      <span>COME BACK TOMORROW</span><span>♡</span><span>IT GETS BETTER</span><span>♡</span>
+      <span>FOR YIN</span><span>♡</span><span>DAY ONE</span><span>♡</span>
+      <span>COME BACK TOMORROW</span><span>♡</span><span>IT GETS BETTER</span><span>♡</span>
+    </div>
+  </div>
+  <div class="d1-cards">
+    <div class="d1-card fade-in fade-in-2" data-n="01" onclick="revealSecret(this)">
+      <div class="d1-card-label">Observation 01 — <span style="font-style:italic;opacity:.6">tap me</span></div>
+      <p class="d1-card-text">The way you <span class="egg" onclick="spawnHearts(event)">laugh</span> at your own jokes before the punchline — loudly, confidently, zero regrets. It's either the most charming thing I've ever seen, or I've been completely gaslit into thinking it is. <em>I genuinely cannot tell anymore.</em></p>
+      <div class="d1-secret">psst — I think it's the charming one. definitely the charming one.</div>
+    </div>
+    <div class="d1-card fade-in fade-in-3" data-n="02" onclick="revealSecret(this)">
+      <div class="d1-card-label">Observation 02 — <span style="font-style:italic;opacity:.6">tap me</span></div>
+      <p class="d1-card-text">You take <em>forever</em> to reply, then respond with a paragraph so detailed it could be submitted as a thesis. <span class="egg" onclick="spawnHearts(event)">Make it make sense.</span> I've gone through three emotional phases waiting and you send a whole essay like nothing happened. Respect, honestly.</p>
+      <div class="d1-secret">I read every single word though. Always. Immediately.</div>
+    </div>
+    <div class="d1-card fade-in fade-in-4" data-n="03" onclick="revealSecret(this)">
+      <div class="d1-card-label">Observation 03 — <span style="font-style:italic;opacity:.6">tap me</span></div>
+      <p class="d1-card-text">You walk into a room and somehow rearrange the <span class="egg" onclick="spawnHearts(event)">energy</span> of it without trying. People notice. <em>You probably don't.</em> That's the most annoying part actually — you have absolutely no idea.</p>
+      <div class="d1-secret">I notice every time. Every. Single. Time.</div>
+    </div>
+    <div class="d1-card fade-in fade-in-5" data-n="04" style="border-top-color: var(--deep);">
+      <div class="d1-card-label">The Real Reason I Made This</div>
+      <p class="d1-card-text">Your <strong style="color:var(--deep)">birthday is in 4 days</strong>. And I wanted you to feel it coming from a mile away. Come back tomorrow — I promise <em>it gets more real.</em></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DAY 2 ══ -->
+<div id="day2" class="screen">
+  <button class="back-btn" style="color:#c8b0a8;background:rgba(30,14,14,0.8);border-color:rgba(232,180,160,0.15)" onclick="goHome()">← Back</button>
+  <div class="d2-leak"></div>
+  <div class="d2-header">
+    <div class="d2-issue">Day 02 of 05 · A Memory · May 26</div>
+    <h2 class="d2-title fade-in">The moment I filed you<br>away as <span>different.</span></h2>
+    <p class="d2-sub fade-in fade-in-2">Volume II · Personal Archives</p>
+  </div>
+  <div class="d2-body">
+    <div class="d2-filmstrip fade-in fade-in-2">
+      <div class="d2-frame">🌙</div><div class="d2-frame">✨</div>
+      <div class="d2-frame">🫧</div><div class="d2-frame">🌸</div>
+      <div class="d2-frame">💭</div><div class="d2-frame">🌙</div>
+    </div>
+    <div class="d2-prose fade-in fade-in-3">
+      <p>I don't remember what we were talking about. I don't even remember who started it. But I remember the exact second something <em>shifted</em> — like a camera pulling into focus on a face that was always there but suddenly, undeniably, <strong>there.</strong></p>
+      <p>You said something honest. Not performatively honest, not the kind of honest people perform to seem deep. Just — real. Quietly, like it cost you nothing. Like you'd long since decided that pretending was too exhausting to bother with.</p>
+      <p>That was the moment. <em>Not dramatic. No music. No sign from the universe.</em> Just a regular conversation that ended and left me thinking about it for much, much longer than I should have.</p>
+    </div>
+    <div class="d2-pull fade-in fade-in-4">
+      "Some people walk into a room and rearrange<br>the furniture of it — without touching anything."
+    </div>
+    <div class="d2-prose fade-in fade-in-5">
+      <p>I've met a lot of people. I remember very few of them with the clarity I remember the version of you I met that day. And I've spent a long while wondering what that says — about you, about me, about what it means when someone just <em>lands differently.</em></p>
+      <p>I don't have a clean answer. I just know that conversation replayed in my head for days after. <strong>Come back tomorrow. Day 3 is the honest one.</strong></p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DAY 3 ══ -->
+<div id="day3" class="screen">
+  <button class="back-btn" onclick="goHome()">← Back</button>
+  <div class="d3-header">
+    <p class="d3-eyebrow fade-in">Day 03 of 05 · The Drafts Folder · May 27</p>
+    <h2 class="d3-title fade-in fade-in-2">Things I<br><span>almost</span> sent you.</h2>
+  </div>
+  <div class="d3-body">
+    <p class="tap-hint">tap each one ↓</p>
+    <div class="draft fade-in fade-in-2" onclick="revealDraft(this)">
+      <div class="draft-stamp"><span class="pill">Draft · Never sent</span></div>
+      <p class="draft-body">"You're <em>easy to think about.</em> That's the problem. <s>I probably shouldn't say this</s> — actually no, I should. You're the kind of person thoughts just default to. Idle moments, random things — somehow they route back to you."</p>
+      <div class="draft-hidden">I still haven't figured out how to say this one out loud. But here it is.</div>
+    </div>
+    <div class="draft fade-in fade-in-3" onclick="revealDraft(this)">
+      <div class="draft-stamp"><span class="pill">Draft · Deleted twice</span></div>
+      <p class="draft-body">"I like how you carry yourself. <s>That sounds weird.</s> I mean — you're sure. Not loud about it. Just <strong>sure.</strong> And that's rarer than you think. Much, much rarer. Most people are performing certainty. You just have it."</p>
+      <div class="draft-hidden">I deleted it because it felt too much. I'm sending it now anyway.</div>
+    </div>
+    <div class="draft fade-in fade-in-4" onclick="revealDraft(this)">
+      <div class="draft-stamp"><span class="pill">Draft · Notes app · 3am</span></div>
+      <p class="draft-body">"I've been paying attention. Maybe more than I let on. <s>Probably more than I should admit.</s> You deserve to know that someone's been noticing — the way you <em>laugh</em>, the way you think out loud, the way you show up. I see it all. I've seen it for a while."</p>
+      <div class="draft-hidden">3am is when the filter goes down. This one's real.</div>
+    </div>
+    <div class="draft fade-in fade-in-5" onclick="revealDraft(this)" style="border-left-color: var(--deep);">
+      <div class="draft-stamp"><span class="pill" style="background:rgba(196,122,106,0.2);color:var(--deep)">Draft · Sending it now</span></div>
+      <p class="draft-body">"I'm glad you <span class="egg" onclick="spawnHearts(event)">exist</span>. Specifically <em>you.</em> The full, unfiltered, impossible-to-replicate version of you. <strong>I'm really, genuinely glad.</strong>"</p>
+      <div class="draft-hidden">This one was always going to make it. Some things are too true to stay in drafts.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DAY 4 ══ -->
+<div id="day4" class="screen">
+  <button class="back-btn" style="color:#c8b0a8;background:rgba(30,14,14,0.8);border-color:rgba(232,180,160,0.15)" onclick="goHome()">← Back</button>
+  <div class="d4-header">
+    <p class="d4-eyebrow fade-in">Day 04 of 05 · The Real One · May 28</p>
+    <h2 class="d4-title fade-in fade-in-2">Why<br><span class="outline">You.</span><br>Specifically.</h2>
+    <p class="d4-intro fade-in fade-in-3">There's a version of this I could write generically — for anyone. I'm not doing that. This is about the particular, impossible-to-replicate you.</p>
+  </div>
+  <div class="d4-list">
+    <div class="d4-item fade-in fade-in-2" onclick="revealExtra(this)">
+      <div class="d4-n">01</div>
+      <div>
+        <div class="d4-reason-title">Honest without being harsh</div>
+        <div class="d4-reason-text">You say true things like they're obvious, like there was never another option. That's a skill most people spend their whole lives never learning. <em>It's one of the most attractive things about you.</em></div>
+        <div class="d4-extra">And the rare times you do soften something — I can tell. Which makes me trust everything you say.</div>
+      </div>
+    </div>
+    <div class="d4-item fade-in fade-in-3" onclick="revealExtra(this)">
+      <div class="d4-n">02</div>
+      <div>
+        <div class="d4-reason-title">Depth that doesn't perform itself</div>
+        <div class="d4-reason-text">It's just there — under the surface. In the way you talk, what you notice, what you choose <em>not</em> to say. You're not trying to seem interesting. You just are.</div>
+        <div class="d4-extra">That's rarer than talent. Rarer than beauty. I pay attention to it every time.</div>
+      </div>
+    </div>
+    <div class="d4-item fade-in fade-in-4" onclick="revealExtra(this)">
+      <div class="d4-n">03</div>
+      <div>
+        <div class="d4-reason-title">You hold your own</div>
+        <div class="d4-reason-text">Not aggressively, not to prove a point. You just — don't fold. There's a quiet kind of strength in you I noticed from the beginning and it hasn't faded once.</div>
+        <div class="d4-extra">That quiet strength is the kind that actually lasts. I see it and I respect it, fully.</div>
+      </div>
+    </div>
+    <div class="d4-item fade-in fade-in-5" onclick="revealExtra(this)">
+      <div class="d4-n">04</div>
+      <div>
+        <div class="d4-reason-title">The way you care</div>
+        <div class="d4-reason-text">When something matters to you, it <em>really</em> matters. You're not halfway about it. That kind of fullness — the way you show up for things — <strong>I find it rare and I find it beautiful.</strong></div>
+        <div class="d4-extra">It makes me want to be worth being cared about by you. That's what it does.</div>
+      </div>
+    </div>
+    <div class="d4-item fade-in" onclick="revealExtra(this)" style="border-bottom:1px solid rgba(196,122,106,0.15)">
+      <div class="d4-n">05</div>
+      <div>
+        <div class="d4-reason-title">You make me more deliberate</div>
+        <div class="d4-reason-text">More present. Like half-effort isn't going to cut it around you, and I don't want it to. That's not nothing. <em>That's actually everything.</em></div>
+        <div class="d4-extra">Tomorrow's the day. Happy almost-birthday, Yin. Get some rest — I'll be ready.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DAY 5 ══ -->
+<div id="day5" class="screen">
+  <button class="back-btn" onclick="goHome()">← Back</button>
+  <div id="envelope-gate">
+    <span class="env-icon" onclick="openBirthday()">💌</span>
+    <p class="env-hint">tap to open your birthday letter</p>
+  </div>
+  <div id="bday-main">
+    <div class="d5-cover">
+      <p class="d5-bday-word fade-in">Happy Birthday ✦ May 29</p>
+      <div class="d5-name-big fade-in fade-in-2">
+        <div>HAPPY</div>
+        <div class="outline">BIRTH</div>
+        <div>DAY</div>
+      </div>
+      <p class="d5-sub-words fade-in fade-in-3">Yin — this one's all yours.</p>
+      <p class="d5-date fade-in fade-in-4">29 · 05 · 2025 ✦ You made it around the sun again</p>
+    </div>
+    <div class="d5-grid-wrap">
+      <div class="d5-grid" id="photo-grid">
+        <div class="d5-photo" onclick="openLB(this)"><div class="d5-placeholder d5-ph-1"><span>🌸</span><small>Photo 1</small></div></div>
+        <div class="d5-photo" onclick="openLB(this)"><div class="d5-placeholder d5-ph-2"><span>✨</span><small>Photo 2</small></div></div>
+        <div class="d5-photo" onclick="openLB(this)"><div class="d5-placeholder d5-ph-3"><span>💛</span><small>Photo 3</small></div></div>
+        <div class="d5-photo" onclick="openLB(this)"><div class="d5-placeholder d5-ph-4"><span>🌹</span><small>Photo 4</small></div></div>
+        <div class="d5-photo" onclick="openLB(this)"><div class="d5-placeholder d5-ph-5"><span>💫</span><small>Photo 5</small></div></div>
+        <div class="d5-photo" onclick="openLB(this)"><div class="d5-placeholder d5-ph-6"><span>🫶</span><small>Photo 6</small></div></div>
+      </div>
+    </div>
+    <div id="live-day5">
+      <div class="live-day5-label"><span class="live-dot"></span> Live from Jae</div>
+      <div class="live-day5-text" id="live-day5-text"></div>
+    </div>
+    <div class="d5-letter-section">
+      <div class="d5-letter fade-in">
+        <div class="letter-from">A letter · May 29, 2025</div>
+        <div class="letter-greeting">Dear Yin,</div>
+        <div class="letter-prose">
+          <p>By the time you're reading this, I've spent five days trying to say something worth saying. And now that I'm here — day five, your actual birthday — I want to drop all the craft and just be straight with you.</p>
+          <p>You are <strong>somebody.</strong> Not in the way people throw around compliments, not in the way people say things to fill silence. I mean it with weight: you are a specific, irreplaceable, one-in-however-many-billion <em>somebody.</em> And the people who get close enough to know that are lucky, even when they don't say it out loud.</p>
+          <p>I've been paying attention for a while now. To the way you think, the way you carry things, the way you show up. And what I know — what I'm more sure of than most things — is this: <strong>you deserve to be celebrated. Fully. Out loud. Without reservation.</strong></p>
+          <p>On your birthday and every other day that follows it — I hope you feel the weight of how rare you are. I hope someone looks at you today and you can tell, from how they look at you, that they <em>actually see you.</em> I hope the day gives back even a fraction of what you give out.</p>
+          <p>I made this for you because words in a text weren't going to be enough. They still aren't, if I'm honest. But this is what I've got, and I meant every word of it — from day one to right now.</p>
+          <p style="text-align:center;font-size:28px;margin:16px 0;letter-spacing:0.15em">🌸 🎂 🌸</p>
+          <p><strong>Happy Birthday, Yin.</strong><br>Here's to you — all of you.</p>
+        </div>
+        <div class="letter-close">With everything,</div>
+        <div class="letter-sig">Jae</div>
+      </div>
+      <div class="d5-barcode-strip">
+        <svg class="barcode-svg" width="100" height="40" viewBox="0 0 100 40">
+          <rect x="0" y="0" width="2" height="40" fill="#c47a6a"/><rect x="4" y="0" width="1" height="40" fill="#c47a6a"/>
+          <rect x="7" y="0" width="3" height="40" fill="#c47a6a"/><rect x="12" y="0" width="1" height="40" fill="#c47a6a"/>
+          <rect x="15" y="0" width="2" height="40" fill="#c47a6a"/><rect x="19" y="0" width="4" height="40" fill="#c47a6a"/>
+          <rect x="25" y="0" width="1" height="40" fill="#c47a6a"/><rect x="28" y="0" width="2" height="40" fill="#c47a6a"/>
+          <rect x="32" y="0" width="1" height="40" fill="#c47a6a"/><rect x="35" y="0" width="3" height="40" fill="#c47a6a"/>
+          <rect x="40" y="0" width="2" height="40" fill="#c47a6a"/><rect x="44" y="0" width="1" height="40" fill="#c47a6a"/>
+          <rect x="47" y="0" width="4" height="40" fill="#c47a6a"/><rect x="53" y="0" width="1" height="40" fill="#c47a6a"/>
+          <rect x="56" y="0" width="2" height="40" fill="#c47a6a"/><rect x="60" y="0" width="3" height="40" fill="#c47a6a"/>
+          <rect x="65" y="0" width="1" height="40" fill="#c47a6a"/><rect x="68" y="0" width="2" height="40" fill="#c47a6a"/>
+          <rect x="72" y="0" width="4" height="40" fill="#c47a6a"/><rect x="78" y="0" width="1" height="40" fill="#c47a6a"/>
+          <rect x="81" y="0" width="3" height="40" fill="#c47a6a"/><rect x="86" y="0" width="2" height="40" fill="#c47a6a"/>
+          <rect x="90" y="0" width="1" height="40" fill="#c47a6a"/><rect x="93" y="0" width="4" height="40" fill="#c47a6a"/>
+          <rect x="99" y="0" width="1" height="40" fill="#c47a6a"/>
+        </svg>
+        <div class="d5-since">YIN /// SINCE ALWAYS</div>
+        <div class="d5-forever">IT'S LOVE ♡</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG — change these
+// ══════════════════════════════════════════
+const BIRTHDAY   = new Date('2025-05-29T00:00:00');
+const ADMIN_PASS = 'jaeyin2025';
+const LS_KEY     = 'yin_live_msg';
+
+// DEV OVERRIDE: Set to 1–5 to force a specific day for testing.
+// Set to null in production so real dates are used.
+const DEV_DAY = null;
+
+// ══════════════════════════════════════════
+// DAY LOGIC — strict: only TODAY is openable
+// Past days are inaccessible. Future days locked.
+// ══════════════════════════════════════════
+function getUnlockDate(day) {
+  const d = new Date(BIRTHDAY);
+  d.setDate(d.getDate() - (5 - day));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getCurrentDay() {
+  if (DEV_DAY !== null) return DEV_DAY;
+  const now = new Date();
+  // Walk backwards from day 5 to find which day is "today"
+  for (let d = 5; d >= 1; d--) {
+    const unlock = getUnlockDate(d);
+    const next   = d < 5 ? getUnlockDate(d + 1) : new Date(BIRTHDAY.getTime() + 86400000);
+    if (now >= unlock && now < next) return d;
+  }
+  // Before May 25 = 0 (nothing unlocked yet)
+  // After birthday = 6 (show post-birthday state)
+  const now2 = new Date();
+  if (now2 >= getUnlockDate(5)) return 5; // keep birthday accessible on birthday + after
+  return 0;
+}
+
+const TODAY = getCurrentDay();
+
+// ══════════════════════════════════════════
+// MUSIC
+// ══════════════════════════════════════════
+const TRACKS = {
+  1: 'JivDRVkbNvs',
+  2: 'FZGMBigBjzU',
+  3: 'u_FdoVrMzms',
+  4: 'HMnrl0tmd3k',
+  5: '450p7goxZqg',
+};
+let musicFrame = null, musicOn = false;
+const musicBtn = document.getElementById('music-btn');
+
+function playMusic(day) {
+  stopMusic();
+  const id = TRACKS[day] || TRACKS[1];
+  musicFrame = document.createElement('iframe');
+  musicFrame.src = `https://www.youtube.com/embed/${id}?autoplay=1&loop=1&playlist=${id}&controls=0`;
+  musicFrame.allow = 'autoplay';
+  Object.assign(musicFrame.style, { position:'fixed', width:'0', height:'0', border:'none', opacity:'0' });
+  document.body.appendChild(musicFrame);
+  musicOn = true;
+  musicBtn.classList.add('playing');
+}
+function stopMusic() {
+  if (musicFrame) { musicFrame.remove(); musicFrame = null; }
+  musicOn = false;
+  musicBtn.classList.remove('playing');
+}
+musicBtn.addEventListener('click', () => musicOn ? stopMusic() : playMusic(TODAY || 1));
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+function goHome() { showScreen('home'); stopMusic(); }
+
+// STRICT: only open if it's exactly today's day
+function openToday() {
+  if (TODAY > 0) openDay(TODAY);
+}
+
+function openDay(d) {
+  // STRICT: only open today's day, never any other
+  if (d !== TODAY) return;
+  showScreen('day' + d);
+  setTimeout(() => playMusic(d), 500);
+  if (d === 5) setTimeout(launchConfetti, 800);
+  loadLiveMessage(d);
+}
+
+// ══════════════════════════════════════════
+// PIPS — visual only; clicking past/future does nothing
+// ══════════════════════════════════════════
+const icons = ['✉️','💌','📝','💛','🎂'];
+const names = ['May 25','May 26','May 27','May 28','May 29'];
+
+(function buildPips() {
+  const c = document.getElementById('pips-container');
+  for (let d = 1; d <= 5; d++) {
+    const pip = document.createElement('div');
+    pip.innerHTML = `${icons[d-1]}<span class="pip-label">${names[d-1]}</span>`;
+    pip.className = 'pip';
+    if (d === 5) pip.classList.add('bday');
+
+    if (d === TODAY) {
+      pip.classList.add('today');
+      pip.title = 'Open today';
+      pip.addEventListener('click', () => openDay(d));
+    } else if (d < TODAY) {
+      // Past day: faded, no pointer, no action
+      pip.classList.add('past');
+      pip.title = 'Yesterday has passed';
+    } else {
+      // Future day: locked
+      pip.classList.add('future');
+      pip.title = 'Come back later ✨';
+    }
+
+    c.appendChild(pip);
+  }
+})();
+
+// ══════════════════════════════════════════
+// COUNTDOWN + OPEN BUTTON STATE
+// ══════════════════════════════════════════
+(function setupHome() {
+  const label = document.getElementById('countdown-label');
+  const timer = document.getElementById('timer');
+  const btn   = document.getElementById('open-today-btn');
+  const lockEl = document.getElementById('lock-msg');
+
+  if (TODAY === 0) {
+    btn.disabled = true;
+    btn.textContent = 'Come back on May 25 🌸';
+    lockEl.innerHTML = 'Nothing\'s unlocked yet — <strong>the first letter opens on May 25.</strong> Check back then.';
+    lockEl.style.display = 'block';
+  }
+
+  function tick() {
+    const diff = BIRTHDAY - new Date();
+    if (diff <= 0) {
+      label.textContent = "It's your birthday!";
+      timer.textContent = '🎂';
+      return;
+    }
+    const days = Math.floor(diff / 86400000);
+    const hrs  = Math.floor((diff % 86400000) / 3600000);
+    const mins = Math.floor((diff % 3600000) / 60000);
+    const secs = Math.floor((diff % 60000) / 1000);
+    if (TODAY > 0) {
+      label.textContent = `day ${TODAY} is open ✦ birthday in`;
+    } else {
+      label.textContent = 'birthday in';
+    }
+    timer.textContent = `${days}d ${hrs}h ${mins}m ${secs}s`;
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+
+// ══════════════════════════════════════════
+// LIVE MESSAGE — localStorage (same-device)
+// Access admin by tapping bottom-left corner 5x
+// or typing openAdminPanel() in console
+// ══════════════════════════════════════════
+let tapCount = 0, tapTimer = null;
+document.getElementById('home').addEventListener('click', function(e) {
+  if (e.clientX < 60 && e.clientY > window.innerHeight - 60) {
+    tapCount++;
+    clearTimeout(tapTimer);
+    tapTimer = setTimeout(() => tapCount = 0, 2000);
+    if (tapCount >= 5) { tapCount = 0; openAdminPanel(); }
+  }
+});
+function openAdminPanel() {
+  document.getElementById('admin-panel').classList.add('open');
+  const existing = localStorage.getItem(LS_KEY);
+  if (existing) document.getElementById('admin-msg').value = existing;
+}
+function closeAdmin() { document.getElementById('admin-panel').classList.remove('open'); }
+function saveMessage() {
+  const pw  = document.getElementById('admin-pw').value;
+  const msg = document.getElementById('admin-msg').value.trim();
+  const st  = document.getElementById('admin-status');
+  if (pw !== ADMIN_PASS) { st.textContent = '❌ Wrong password.'; st.style.display = 'block'; return; }
+  if (!msg) { st.textContent = '⚠️ Write something first.'; st.style.display = 'block'; return; }
+  localStorage.setItem(LS_KEY, msg);
+  st.textContent = '✅ Message sent!'; st.style.display = 'block';
+  setTimeout(() => { closeAdmin(); loadLiveMessage(TODAY); }, 1200);
+}
+function loadLiveMessage(day) {
+  const msg = localStorage.getItem(LS_KEY);
+  if (!msg) return;
+  document.getElementById('live-home-text').textContent = msg;
+  document.getElementById('live-home-msg').style.display = 'block';
+  if (day === 5) {
+    document.getElementById('live-day5-text').textContent = msg;
+    document.getElementById('live-day5').style.display = 'block';
+  }
+}
+loadLiveMessage(TODAY);
+setInterval(() => loadLiveMessage(TODAY), 30000);
+
+// ══════════════════════════════════════════
+// EASTER EGGS
+// ══════════════════════════════════════════
+function spawnHearts(e) {
+  e.stopPropagation();
+  const container = document.getElementById('egg-hearts');
+  const x = e.clientX, y = e.clientY;
+  const emojis = ['🌸','💗','✨','💕','🌷','💖','🫶'];
+  for (let i = 0; i < 6; i++) {
+    const h = document.createElement('div');
+    h.className = 'egg-heart';
+    h.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    h.style.cssText = `left:${x + (Math.random()-0.5)*60}px;top:${y}px;animation-delay:${i*0.08}s;`;
+    container.appendChild(h);
+    setTimeout(() => h.remove(), 1600);
+  }
+}
+function revealSecret(card) {
+  const secret = card.querySelector('.d1-secret');
+  if (!secret || secret.style.display === 'block') return;
+  secret.style.display = 'block';
+  spawnHeartsAt(card);
+}
+function revealDraft(draft) {
+  const h = draft.querySelector('.draft-hidden');
+  if (!h) return;
+  h.style.display = h.style.display === 'block' ? 'none' : 'block';
+}
+function revealExtra(item) {
+  const ex = item.querySelector('.d4-extra');
+  if (!ex) return;
+  ex.style.display = ex.style.display === 'block' ? 'none' : 'block';
+}
+function spawnHeartsAt(el) {
+  const r = el.getBoundingClientRect();
+  const fakeEvent = { clientX: r.left + r.width/2, clientY: r.top + 20, stopPropagation: () => {} };
+  spawnHearts(fakeEvent);
+}
+
+// ══════════════════════════════════════════
+// BIRTHDAY ENVELOPE
+// ══════════════════════════════════════════
+function openBirthday() {
+  document.getElementById('envelope-gate').style.display = 'none';
+  document.getElementById('bday-main').style.display = 'block';
+  setTimeout(launchConfetti, 400);
+  setTimeout(launchConfetti, 2000);
+}
+
+// ══════════════════════════════════════════
+// CONFETTI
+// ══════════════════════════════════════════
+function launchConfetti() {
+  const cv = document.getElementById('confetti-canvas');
+  cv.style.display = 'block';
+  cv.width = window.innerWidth; cv.height = window.innerHeight;
+  const ctx = cv.getContext('2d');
+  const cols = ['#f5e6e0','#e8b4a0','#c47a6a','#c9956c','#9e6b72','#fdf0ec','#fff9f5','#f9c6b5','#ffd6cc'];
+  const pieces = Array.from({ length: 160 }, () => ({
+    x: Math.random()*cv.width, y: -20 - Math.random()*120,
+    r: 3 + Math.random()*8, d: 0.6 + Math.random()*2.2,
+    dx: (Math.random()-0.5)*0.8,
+    color: cols[~~(Math.random()*cols.length)],
+    ta: 0, ts: 0.04 + Math.random()*0.08,
+    shape: Math.random() > 0.4 ? 'rect' : 'circle',
+  }));
+  let f = 0;
+  (function draw() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    pieces.forEach(p => {
+      p.ta += p.ts; p.y += p.d; p.x += p.dx;
+      if (p.y > cv.height+20) { p.y = -10; p.x = Math.random()*cv.width; }
+      ctx.fillStyle = p.color;
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.ta);
+      if (p.shape === 'circle') { ctx.beginPath(); ctx.arc(0,0,p.r,0,Math.PI*2); ctx.fill(); }
+      else { ctx.fillRect(-p.r, -p.r*.5, p.r*2, p.r); }
+      ctx.restore();
+    });
+    if (++f < 520) requestAnimationFrame(draw);
+    else { ctx.clearRect(0, 0, cv.width, cv.height); cv.style.display = 'none'; }
+  })();
+}
+
+// ══════════════════════════════════════════
+// LIGHTBOX
+// ══════════════════════════════════════════
+function openLB(el) {
+  const img = el.querySelector('img');
+  if (!img) return;
+  document.getElementById('lightbox-img').src = img.src;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLB() { document.getElementById('lightbox').classList.remove('open'); }
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target === document.getElementById('lightbox')) closeLB();
+});
+
+// ══════════════════════════════════════════
+// FLOATING PETALS
+// ══════════════════════════════════════════
+(function petals() {
+  const cv = document.getElementById('petal-canvas');
+  const ctx = cv.getContext('2d');
+  function resize() { cv.width = window.innerWidth; cv.height = window.innerHeight; }
+  resize();
+  window.addEventListener('resize', resize);
+  const pts = Array.from({ length: 22 }, () => ({
+    x: Math.random()*cv.width, y: Math.random()*cv.height,
+    s: 5 + Math.random()*9, d: 0.12 + Math.random()*0.25,
+    dx: (Math.random()-.5)*.25, a: Math.random()*Math.PI*2,
+    da: 0.004 + Math.random()*0.009, op: 0.04 + Math.random()*0.09,
+  }));
+  (function draw() {
+    ctx.clearRect(0, 0, cv.width, cv.height);
+    pts.forEach(p => {
+      p.y += p.d; p.x += p.dx; p.a += p.da;
+      if (p.y > cv.height+20) { p.y = -20; p.x = Math.random()*cv.width; }
+      ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
+      ctx.globalAlpha = p.op; ctx.fillStyle = '#c47a6a';
+      ctx.beginPath(); ctx.ellipse(0, 0, p.s, p.s*.55, 0, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    });
+    requestAnimationFrame(draw);
+  })();
+})();
+</script>
+</body>
+</html>
