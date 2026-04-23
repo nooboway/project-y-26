@@ -141,7 +141,7 @@ export default function Cover() {
               >
                 <div className="flex items-start justify-between">
                   <div className="font-display text-3xl leading-none">{String(d.index).padStart(2, "0")}</div>
-                  <div className={`h-2.5 w-2.5 rounded-full ${d.isToday ? "pip-now" : ""}`}
+                  <div className={`pip h-2.5 w-2.5 rounded-full ${d.isToday ? "pip-now" : ""}`}
                        style={{ background: d.unlocked ? "var(--accent)" : "transparent", border: "1px solid var(--ink)" }} />
                 </div>
 
