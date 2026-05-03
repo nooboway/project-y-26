@@ -8,7 +8,7 @@ import { loadSite, loadDays, computeDayIndex } from "../lib/lock.js";
 
 const router = express.Router();
 
-router.get("/site", async (_req: express.Request, res: express.Response): Promise<void> => {
+router.get("/site", async (_req: any, res: any): Promise<void> => {
   const site = await loadSite();
   const days = await loadDays();
   const now = new Date();
@@ -34,7 +34,7 @@ router.get("/site", async (_req: express.Request, res: express.Response): Promis
   res.json(GetSiteResponse.parse(data));
 });
 
-router.get("/live", async (_req: express.Request, res: express.Response): Promise<void> => {
+router.get("/live", async (_req: any, res: any): Promise<void> => {
   const site = await loadSite();
   res.json(
     GetLiveMessageResponse.parse({
