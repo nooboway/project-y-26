@@ -1,5 +1,5 @@
 import { db, siteConfigTable, daysTable } from "@workspace/db";
-import { sql } from "drizzle-orm";
+import { sql } from "@workspace/db";
 import { logger } from "./logger.js";
 
 const DAYS_SEED = [

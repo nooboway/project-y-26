@@ -1,5 +1,5 @@
 import { db, siteConfigTable, daysTable } from "@workspace/db";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc } from "@workspace/db";
 
 export type SiteConfigRow = typeof siteConfigTable.$inferSelect;
 export type DayRow = typeof daysTable.$inferSelect;

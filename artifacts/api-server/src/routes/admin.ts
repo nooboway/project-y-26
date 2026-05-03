@@ -1,5 +1,5 @@
 import express from "express";
-import { eq } from "drizzle-orm";
+import { eq } from "@workspace/db";
 import crypto from "node:crypto";
 import { db, siteConfigTable, daysTable } from "@workspace/db";
 import {
@@ -120,7 +120,7 @@ router.put("/admin/live", requireAdmin, async (req: any, res: any): Promise<void
 router.get("/admin/days", requireAdmin, async (_req: any, res: any): Promise<void> => {
   const site = await loadSite();
   const rows = await db.select().from(daysTable).orderBy(daysTable.index);
-  res.json(AdminListDaysResponse.parse(rows.map((d: any) => ({
+  res.json(AdminListDaysResponse.parse(rows.map((d) => ({
     slug: d.slug,
     index: d.index,
     title: d.title,
