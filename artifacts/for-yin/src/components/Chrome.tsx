@@ -109,28 +109,42 @@ export function MastheadBar({ right }: { right?: ReactNode }) {
   );
 }
 
-const BIRTHDAY = new Date("2025-05-29T00:00:00");
 
 export function Countdown() {
-  const [diff, setDiff] = useState(() => BIRTHDAY.getTime() - Date.now());
+  const { data: site } = useGetSite({
+    query: { queryKey: getGetSiteQueryKey() },
+  });
+  const birthdayMs = site?.birthdayDate
+    ? new Date(site.birthdayDate).getTime()
+    : null;
+  const [diff, setDiff] = useState<number>(() =>
+    birthdayMs != null ? birthdayMs - Date.now() : Infinity
+  );
 
   useEffect(() => {
-    const id = window.setInterval(() => {
-      setDiff(BIRTHDAY.getTime() - Date.now());
-    }, 1000);
+    if (birthdayMs == null) return;
+    setDiff(birthdayMs - Date.now());
+    const id = window.setInterval(
+      () => setDiff(birthdayMs - Date.now()),
+      1000
+    );
     return () => window.clearInterval(id);
-  }, []);
+  }, [birthdayMs]);
+
+  if (birthdayMs == null) return null;
 
   if (diff <= 0) {
     return (
       <div className="text-center py-6">
-        <span style={{
-          fontFamily: "'Cormorant Garamond', serif",
-          fontStyle: "italic",
-          fontSize: "32px",
-          color: "var(--rose)",
-        }}>
-          HAPPY BIRTHDAY YIN 🌸
+        <span
+          style={{
+            fontFamily: "'Cormorant Garamond', serif",
+            fontStyle: "italic",
+            fontSize: "32px",
+            color: "var(--rose)",
+          }}
+        >
+          HAPPY BIRTHDAY YIN
         </span>
       </div>
     );
@@ -144,7 +158,10 @@ export function Countdown() {
 
   const Cell = ({ n, label }: { n: number; label: string }) => (
     <div className="flex flex-col items-center px-3 sm:px-5">
-      <div className="font-display text-5xl sm:text-7xl leading-none tabular-nums" style={{ color: "var(--ink)" }}>
+      <div
+        className="font-display text-5xl sm:text-7xl leading-none tabular-nums"
+        style={{ color: "var(--ink)" }}
+      >
         {String(n).padStart(2, "0")}
       </div>
       <div className="uppercase-mono mt-1 opacity-70">{label}</div>
@@ -152,7 +169,12 @@ export function Countdown() {
   );
 
   const Sep = () => (
-    <div className="font-display text-5xl sm:text-7xl leading-none" style={{ color: "var(--border-strong)" }}>|</div>
+    <div
+      className="font-display text-5xl sm:text-7xl leading-none"
+      style={{ color: "var(--border-strong)" }}
+    >
+      |
+    </div>
   );
 
   return (
