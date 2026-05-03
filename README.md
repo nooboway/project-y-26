@@ -21,3 +21,39 @@ A high-fidelity, interactive web experience designed for the 05.25 anniversary. 
 
 ---
 Developed by **Sylens Technologies**.
+
+## Post-deploy admin tasks (run after v3.0 is live)
+### 1. Update birthday dates
+Go to /admin → Site Config → update:
+- startDate: 2026-05-25T00:00:00.000Z
+- birthdayDate: 2026-05-29T00:00:00.000Z
+
+### 2. Update day Igbo titles (if not auto-seeded)
+Go to /admin → Days → edit each day:
+- day-1 igboTitle: Ụtọ
+- day-2 igboTitle: Echiche
+- day-3 igboTitle: Obi m
+- day-4 igboTitle: Ifunanya
+- day-5 igboTitle: Ndụ m
+
+### 3. Update day display titles
+Go to /admin → Days → edit each day's title field:
+- day-1 title: Ụtọ
+- day-2 title: Echiche
+- day-3 title: Obi m
+- day-4 title: Ifunanya
+- day-5 title: Ndụ m
+
+### 4. Upload photos
+Go to /admin → Days → Day 5 → gallery slots
+Upload each photo using the new upload component.
+Cloudinary credentials must be set in Vercel env vars first.
+
+### 5. Set day music
+Go to /admin → Days → each day → youtubeId field
+Replace placeholder IDs with actual YouTube video IDs.
+The ID is the 11-character string after v= in the YouTube URL.
+
+### 6. Add voice note audio (Day 3)
+Go to /admin → Days → Day 3 → Voice Note
+Upload the audio file or paste the Cloudinary URL.
