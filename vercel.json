@@ -1,5 +1,11 @@
 {
   "outputDirectory": "artifacts/for-yin/dist/public",
   "buildCommand": "pnpm run build",
-  "installCommand": "pnpm install"
+  "installCommand": "pnpm install",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://project-y-26.onrender.com/api/:path*"
+    }
+  ]
 }
