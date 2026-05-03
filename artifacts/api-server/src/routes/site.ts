@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type Request, type Response } from "express";
 import { logger } from "../lib/logger.js";
 import {
   GetSiteResponse,
@@ -8,7 +8,7 @@ import { loadSite, loadDays, computeDayIndex } from "../lib/lock.js";
 
 const router = Router();
 
-router.get("/site", async (_req, res): Promise<void> => {
+router.get("/site", async (_req: Request, res: Response): Promise<void> => {
   const site = await loadSite();
   const days = await loadDays();
   const now = new Date();
@@ -34,7 +34,7 @@ router.get("/site", async (_req, res): Promise<void> => {
   res.json(GetSiteResponse.parse(data));
 });
 
-router.get("/live", async (_req, res): Promise<void> => {
+router.get("/live", async (_req: Request, res: Response): Promise<void> => {
   const site = await loadSite();
   res.json(
     GetLiveMessageResponse.parse({

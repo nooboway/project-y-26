@@ -1,4 +1,4 @@
-import { Router, type IRouter, type Request, type Response, type NextFunction } from "express";
+import { Router, type Request, type Response, type NextFunction } from "express";
 import { eq } from "drizzle-orm";
 import crypto from "node:crypto";
 import { db, siteConfigTable, daysTable } from "@workspace/db";
@@ -47,7 +47,7 @@ function requireAdmin(req: Request, res: Response, next: NextFunction): void {
   next();
 }
 
-router.post("/admin/login", async (req, res): Promise<void> => {
+router.post("/admin/login", async (req: Request, res: Response): Promise<void> => {
   const parsed = AdminLoginBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -60,7 +60,7 @@ router.post("/admin/login", async (req, res): Promise<void> => {
   res.json(AdminLoginResponse.parse({ token: makeToken() }));
 });
 
-router.get("/admin/site", requireAdmin, async (_req, res): Promise<void> => {
+router.get("/admin/site", requireAdmin, async (_req: Request, res: Response): Promise<void> => {
   const s = await loadSite();
   res.json(AdminGetSiteResponse.parse({
     title: s.title,
@@ -75,7 +75,7 @@ router.get("/admin/site", requireAdmin, async (_req, res): Promise<void> => {
   }));
 });
 
-router.put("/admin/site", requireAdmin, async (req, res): Promise<void> => {
+router.put("/admin/site", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const parsed = AdminUpdateSiteBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -99,7 +99,7 @@ router.put("/admin/site", requireAdmin, async (req, res): Promise<void> => {
   }));
 });
 
-router.put("/admin/live", requireAdmin, async (req, res): Promise<void> => {
+router.put("/admin/live", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const parsed = AdminUpdateLiveBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -117,7 +117,7 @@ router.put("/admin/live", requireAdmin, async (req, res): Promise<void> => {
   }));
 });
 
-router.get("/admin/days", requireAdmin, async (_req, res): Promise<void> => {
+router.get("/admin/days", requireAdmin, async (_req: Request, res: Response): Promise<void> => {
   const site = await loadSite();
   const rows = await db.select().from(daysTable).orderBy(daysTable.index);
   res.json(AdminListDaysResponse.parse(rows.map((d) => ({
@@ -144,7 +144,7 @@ router.get("/admin/days", requireAdmin, async (_req, res): Promise<void> => {
   }))));
 });
 
-router.get("/admin/seen", requireAdmin, async (_req, res): Promise<void> => {
+router.get("/admin/seen", requireAdmin, async (_req: Request, res: Response): Promise<void> => {
   const rows = await db.select().from(daysTable).orderBy(daysTable.index);
   res.json(AdminListSeenResponse.parse(rows.map((d: any) => ({
     slug: d.slug,
@@ -155,7 +155,7 @@ router.get("/admin/seen", requireAdmin, async (_req, res): Promise<void> => {
   }))));
 });
 
-router.put("/admin/days/:slug", requireAdmin, async (req, res): Promise<void> => {
+router.put("/admin/days/:slug", requireAdmin, async (req: Request, res: Response): Promise<void> => {
   const slugRaw = req.params.slug;
   const slug = Array.isArray(slugRaw) ? slugRaw[0] : slugRaw;
   if (typeof slug !== "string") {
