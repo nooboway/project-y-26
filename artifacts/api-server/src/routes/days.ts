@@ -8,7 +8,7 @@ import {
   SendDayReplyBody,
   SendDayReplyResponse,
 } from "@workspace/api-zod";
-import { loadSite, loadDays, computeDayIndex, dayUnlockDateIso } from "../lib/lock.js";
+import { loadSite, loadDays, computeDayIndex, dayUnlockDateIso } from "../lib/lock";
 
 const router: IRouter = Router();
 
