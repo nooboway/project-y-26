@@ -1,10 +1,10 @@
-import { Router, type IRouter } from "express";
+import express from "express";
 import healthRouter from "./health";
 import siteRouter from "./site";
 import daysRouter from "./days";
 import adminRouter from "./admin";
 
-const router = Router();
+const router = express.Router();
 
 router.use(healthRouter);
 router.use(siteRouter);
