@@ -123,12 +123,7 @@ export default function Cover() {
             </div>
             <div className="coord-stamp">SIDE A · 33⅓ RPM</div>
           </div>
-          {!isAftermath && <Countdown seconds={site.secondsUntilBirthday} />}
-          {isAftermath && (
-            <div className="font-serif italic text-3xl text-center" style={{ color: "var(--mauve)" }}>
-              the morning has happened. and you were everything.
-            </div>
-          )}
+          <Countdown />
         </div>
       </div>
 

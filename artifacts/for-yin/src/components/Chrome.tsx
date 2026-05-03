@@ -109,18 +109,39 @@ export function MastheadBar({ right }: { right?: ReactNode }) {
   );
 }
 
-export function Countdown({ seconds }: { seconds: number }) {
-  const [s, setS] = useState(seconds);
-  useEffect(() => { setS(seconds); }, [seconds]);
+const BIRTHDAY = new Date("2025-05-29T00:00:00");
+
+export function Countdown() {
+  const [diff, setDiff] = useState(() => BIRTHDAY.getTime() - Date.now());
+
   useEffect(() => {
-    if (s <= 0) return;
-    const id = window.setInterval(() => setS((v) => Math.max(0, v - 1)), 1000);
+    const id = window.setInterval(() => {
+      setDiff(BIRTHDAY.getTime() - Date.now());
+    }, 1000);
     return () => window.clearInterval(id);
-  }, [s > 0]); // eslint-disable-line
-  const d = Math.floor(s / 86400);
-  const h = Math.floor((s % 86400) / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
+  }, []);
+
+  if (diff <= 0) {
+    return (
+      <div className="text-center py-6">
+        <span style={{
+          fontFamily: "'Cormorant Garamond', serif",
+          fontStyle: "italic",
+          fontSize: "32px",
+          color: "var(--rose)",
+        }}>
+          HAPPY BIRTHDAY YIN 🌸
+        </span>
+      </div>
+    );
+  }
+
+  const totalSec = Math.floor(diff / 1000);
+  const d = Math.floor(totalSec / 86400);
+  const h = Math.floor((totalSec % 86400) / 3600);
+  const m = Math.floor((totalSec % 3600) / 60);
+  const s = totalSec % 60;
+
   const Cell = ({ n, label }: { n: number; label: string }) => (
     <div className="flex flex-col items-center px-3 sm:px-5">
       <div className="font-display text-5xl sm:text-7xl leading-none tabular-nums" style={{ color: "var(--ink)" }}>
@@ -129,12 +150,20 @@ export function Countdown({ seconds }: { seconds: number }) {
       <div className="uppercase-mono mt-1 opacity-70">{label}</div>
     </div>
   );
+
+  const Sep = () => (
+    <div className="font-display text-5xl sm:text-7xl leading-none" style={{ color: "var(--border-strong)" }}>|</div>
+  );
+
   return (
-    <div className="flex items-end justify-center divide-x hairline">
+    <div className="flex items-end justify-center">
       <Cell n={d} label="days" />
+      <Sep />
       <Cell n={h} label="hrs" />
+      <Sep />
       <Cell n={m} label="min" />
-      <Cell n={sec} label="sec" />
+      <Sep />
+      <Cell n={s} label="sec" />
     </div>
   );
 }
