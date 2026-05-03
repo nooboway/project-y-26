@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>For Yin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="petal-canvas"></canvas>
+<canvas id="confetti-canvas"></canvas>
+<button id="music-btn" aria-label="Toggle music">🎵</button>
+<div class="egg-hearts" id="egg-hearts"></div>
+<div class="flash-overlay" id="flash-overlay"></div>
+
+<!-- ══ LIGHTBOX ══ -->
+<div class="lightbox" id="lightbox">
+  <span class="lightbox-close" id="lightbox-close">×</span>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<!-- ══ ADMIN PANEL ══ -->
+<div class="admin-overlay" id="admin-panel">
+  <div class="admin-box">
+    <div class="admin-title">send a message to Yin</div>
+    <div class="admin-field">
+      <label>Password</label>
+      <input type="password" id="admin-pw" placeholder="Enter password">
+    </div>
+    <div class="admin-field">
+      <label>Your message (shows live on her screen)</label>
+      <textarea id="admin-msg" rows="4" placeholder="hey Yin, just thinking about you…"></textarea>
+    </div>
+    <div class="admin-btns">
+      <button class="admin-save" id="admin-save-btn">Send Live 💌</button>
+      <button class="admin-cancel" id="admin-cancel-btn">Cancel</button>
+    </div>
+    <div class="admin-status" id="admin-status"></div>
+  </div>
+</div>
+
+<!-- ══ SECRET PAGE ══ -->
+<div class="secret-page" id="secret-page">
+  <div class="secret-page-text">you found it. that's very you.</div>
+  <div class="secret-page-sig">— J</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     5. HOME SCREEN
+     ═══════════════════════════════════════════════ -->
+<div id="home" class="screen active">
+
+  <!-- 5.2 Header Bar -->
+  <div class="home-header">
+    <div class="home-header-left">
+      <div class="home-header-title">FOR <span>YIN</span></div>
+      <div class="home-header-coords">40.7128°N 74.0060°W</div>
+      <div class="home-header-place">THE CORNER WHERE WE FIRST MET</div>
+    </div>
+    <div class="home-header-right" id="admin-trigger">ADMIN</div>
+  </div>
+
+  <!-- 5.3 Live Ticker (Top) -->
+  <div class="live-ticker-top" id="live-ticker-top">
+    <div class="live-ticker-track">
+      <span>LIVE FROM HIM</span><span>✦</span>
+      <span>THINKING ABOUT YOU</span><span>✦</span>
+      <span>ALWAYS</span><span>✦</span>
+      <span>LIVE FROM HIM</span><span>✦</span>
+      <span>THINKING ABOUT YOU</span><span>✦</span>
+      <span>ALWAYS</span><span>✦</span>
+      <span>LIVE FROM HIM</span><span>✦</span>
+      <span>THINKING ABOUT YOU</span><span>✦</span>
+      <span>ALWAYS</span><span>✦</span>
+      <span>LIVE FROM HIM</span><span>✦</span>
+      <span>THINKING ABOUT YOU</span><span>✦</span>
+      <span>ALWAYS</span><span>✦</span>
+    </div>
+  </div>
+
+  <!-- 5.4 Hero Section -->
+  <div class="home-hero">
+    <div class="home-hero-label">ISSUE 05 · MAY 29</div>
+    <div class="home-hero-sublabel">FIVE DAYS TO YIN</div>
+    <div class="home-hero-title">
+      <div class="line1">birthday,</div>
+      <div class="line2">YIN.</div>
+    </div>
+    <div class="home-hero-subtitle">from J, slowly. an unbroken letter, opened one day at a time.</div>
+
+    <!-- 5.5 Open Button -->
+    <button class="open-btn" id="open-today-btn">OPEN TODAY'S LETTER →</button>
+
+    <!-- Live message on home -->
+    <div class="live-home-msg" id="live-home-msg">
+      <div class="live-badge"><span class="live-dot"></span> Live from Jae</div>
+      <div class="live-text" id="live-home-text"></div>
+    </div>
+  </div>
+
+  <!-- 5.6 Hero Image -->
+  <div class="home-hero-image">
+    <span>IMAGE</span>
+  </div>
+
+  <!-- 5.7 Countdown Section -->
+  <div class="countdown-section">
+    <div class="countdown-labels">
+      <span>UNTIL MORNING</span>
+      <span>SIDE A · 33⅓ RPM</span>
+    </div>
+    <div class="countdown-timer" id="countdown-timer">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- 5.8 The Issues List -->
+  <div class="issues-section">
+    <div class="issues-header">
+      <div class="issues-title">THE ISSUES</div>
+      <div class="issues-count" id="issues-count">0 / 5 UNLOCKED</div>
+    </div>
+    <div id="issues-list">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+  <!-- 5.9 Bottom Ticker -->
+  <div class="live-ticker-bottom">
+    <div class="live-ticker-track">
+      <span>HIM</span><span>✦</span>
+      <span>THINKING</span><span>✦</span>
+      <span>RIGHT NOW</span><span>✦</span>
+      <span>ABOUT YOU</span><span>✦</span>
+      <span>ALWAYS</span><span>✦</span>
+      <span>HIM</span><span>✦</span>
+      <span>THINKING</span><span>✦</span>
+      <span>RIGHT NOW</span><span>✦</span>
+      <span>ABOUT YOU</span><span>✦</span>
+      <span>ALWAYS</span><span>✦</span>
+      <span>HIM</span><span>✦</span>
+      <span>THINKING</span><span>✦</span>
+      <span>RIGHT NOW</span><span>✦</span>
+      <span>ABOUT YOU</span><span>✦</span>
+      <span>ALWAYS</span><span>✦</span>
+    </div>
+  </div>
+
+  <!-- 5.10 Footer Line -->
+  <div class="home-footer">A PRIVATE ISSUE · PRINTED IN ONE COPY</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     6. DAY 1 — Ụtọ — SCRATCH CARDS
+     ═══════════════════════════════════════════════ -->
+<div id="day1" class="screen">
+  <button class="back-btn" id="day1-back">← BACK</button>
+  <div class="d1-header">
+    <div class="d1-label">UTỌ · SWEETNESS · ISSUE 01 · MAY 25</div>
+    <div class="d1-title-serif">things i love</div>
+    <div class="d1-title-display">about you.</div>
+    <div class="d1-subtitle">scratch each one.</div>
+    <div class="d1-subtitle-2">some have a second layer.</div>
+  </div>
+  <div class="d1-cards" id="d1-cards">
+    <!-- Populated by JS -->
+  </div>
+  <div class="d1-end" id="d1-end">
+    <div class="d1-end-line1">come back tomorrow.</div>
+    <div class="d1-end-line2">Echiche is waiting.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     7. DAY 2 — Echiche — TERMINAL
+     ═══════════════════════════════════════════════ -->
+<div id="day2" class="screen">
+  <button class="back-btn-dark" id="day2-back">← BACK</button>
+  <div class="d2-corner-label">ECHICHE · ISSUE 02</div>
+  <div class="d2-scanlines"></div>
+  <div class="d2-content" id="d2-content">
+    <!-- Populated by JS typewriter -->
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     8. DAY 3 — Obi m — VOICE MEMOS
+     ═══════════════════════════════════════════════ -->
+<div id="day3" class="screen">
+  <button class="back-btn" id="day3-back">← BACK</button>
+  <div class="d3-header">
+    <div class="d3-label">OBI M · MY HEART · ISSUE 03 · MAY 27</div>
+    <div class="d3-title-serif">things i</div>
+    <div class="d3-title-display">recorded.</div>
+    <div class="d3-subtitle">press play on each one.</div>
+  </div>
+  <div class="voice-memo-container" id="voice-memo-container">
+    <div class="voice-memo-header">voice memos</div>
+    <!-- Populated by JS -->
+  </div>
+  <div class="d3-end" id="d3-end">
+    <div class="d3-end-line1">tomorrow is the one i've been building to.</div>
+    <div class="d3-end-line2">turn your sound on.</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     9. DAY 4 — Ifunanya — IGBO SLIDESHOW
+     ═══════════════════════════════════════════════ -->
+<div id="day4" class="screen">
+  <button class="back-btn-dark" id="day4-back" style="display:none">← BACK</button>
+
+  <!-- Sound gate -->
+  <div class="d4-sound-gate" id="d4-sound-gate">
+    <div class="d4-sound-icon">🔊</div>
+    <div class="d4-sound-text">turn your sound on.</div>
+    <div class="d4-sound-sub">this one needs it.</div>
+    <button class="d4-sound-btn" id="d4-sound-btn">i'm ready</button>
+  </div>
+
+  <!-- Slides -->
+  <div class="d4-slides" id="d4-slides">
+    <!-- Populated by JS -->
+  </div>
+
+  <!-- Progress dots -->
+  <div class="d4-dots" id="d4-dots">
+    <div class="d4-dot"></div>
+    <div class="d4-dot"></div>
+    <div class="d4-dot"></div>
+    <div class="d4-dot"></div>
+    <div class="d4-dot"></div>
+    <div class="d4-dot"></div>
+  </div>
+
+  <!-- End state -->
+  <div class="d4-end" id="d4-end">
+    <div class="d4-end-back" id="d4-end-back">← back</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     10. DAY 5 — Ndụ m — BIRTHDAY
+     ═══════════════════════════════════════════════ -->
+<div id="day5" class="screen">
+  <button class="back-btn" id="day5-back" style="display:none">← BACK</button>
+
+  <!-- Envelope gate -->
+  <div class="envelope-gate" id="envelope-gate">
+    <div class="envelope-icon" id="envelope-icon">💌</div>
+    <div class="envelope-hint">tap to open your birthday letter</div>
+  </div>
+
+  <!-- Birthday content -->
+  <div class="bday-content" id="bday-content">
+
+    <!-- Cover section -->
+    <div class="d5-cover">
+      <div class="d5-cover-label">HAPPY BIRTHDAY · MAY 29</div>
+      <div class="d5-cover-title">
+        <div>HAPPY</div>
+        <div class="outline">BIRTH</div>
+        <div>DAY</div>
+      </div>
+      <div class="d5-cover-sub">Yin — this one's all yours.</div>
+      <div class="d5-cover-date">29 · 05 · 2025 ✦ you made it around the sun again</div>
+    </div>
+
+    <!-- Photo gallery -->
+    <div class="d5-gallery">
+      <div class="d5-grid" id="d5-grid">
+        <div class="d5-photo" data-idx="0"><div class="d5-placeholder d5-ph-1"><span>🌸</span><small>Photo 1</small></div></div>
+        <div class="d5-photo" data-idx="1"><div class="d5-placeholder d5-ph-2"><span>✨</span><small>Photo 2</small></div></div>
+        <div class="d5-photo" data-idx="2"><div class="d5-placeholder d5-ph-3"><span>💛</span><small>Photo 3</small></div></div>
+        <div class="d5-photo" data-idx="3"><div class="d5-placeholder d5-ph-4"><span>🌹</span><small>Photo 4</small></div></div>
+        <div class="d5-photo" data-idx="4"><div class="d5-placeholder d5-ph-5"><span>💫</span><small>Photo 5</small></div></div>
+        <div class="d5-photo" data-idx="5"><div class="d5-placeholder d5-ph-6"><span>🫶</span><small>Photo 6</small></div></div>
+      </div>
+      <div class="d5-captions" id="d5-captions">
+        <div class="d5-caption">this one. i keep coming back to this one.</div>
+        <div class="d5-caption">you don't know i have this saved.</div>
+        <div class="d5-caption">this is the one that started everything.</div>
+        <div class="d5-caption">i remember exactly where we were.</div>
+        <div class="d5-caption">you look like yourself here. fully.</div>
+        <div class="d5-caption">the last one. for now.</div>
+      </div>
+    </div>
+
+    <!-- Live message on Day 5 -->
+    <div class="live-day5" id="live-day5">
+      <div class="live-day5-label"><span class="live-dot"></span> Live from Jae</div>
+      <div class="live-day5-text" id="live-day5-text"></div>
+    </div>
+
+    <!-- 10 Ways section -->
+    <div class="d5-ten-ways">
+      <div class="d5-ten-ways-header-serif">i love you</div>
+      <div class="d5-ten-ways-header-display">in 10 ways.</div>
+      <button class="d5-ten-ways-btn" id="ten-ways-btn">see them</button>
+    </div>
+
+    <!-- Letter -->
+    <div class="d5-letter-section">
+      <div class="d5-letter">
+        <div class="letter-from">a letter · may 29, 2025</div>
+        <div class="letter-greeting">Dear Yin,</div>
+        <div class="letter-prose">
+          <p>By the time you're reading this, i've spent five days trying to say something worth saying. And now that i'm here — day five, your actual birthday — i want to drop all the craft and just be straight with you.</p>
+          <p>You are <strong>somebody.</strong> Not in the way people throw around compliments, not in the way people say things to fill silence. I mean it with weight: you are a specific, irreplaceable, one-in-however-many-billion <em>somebody.</em> And the people who get close enough to know that are lucky, even when they don't say it out loud.</p>
+          <p>I've been paying attention for a while now. To the way you think, the way you carry things, the way you show up. And what i know — what i'm more sure of than most things — is this: <strong>you deserve to be celebrated. Fully. Out loud. Without reservation.</strong></p>
+          <p>On your birthday and every day that follows it — i hope you feel the weight of how rare you are. I hope someone looks at you today and you can tell, from how they look at you, that they <em>actually see you.</em> I hope the day gives back even a fraction of what you give out.</p>
+          <div class="letter-emoji-break">🌸 🎂 🌸</div>
+          <p>I made this for you because words in a text weren't going to be enough. They still aren't, if i'm honest. But this is what i've got — five days, one word at a time — and i meant every single word of it.</p>
+          <p><strong>Happy Birthday, Yin.</strong><br>Here's to you — all of you.</p>
+        </div>
+        <div class="letter-close">With everything,</div>
+        <div class="letter-sig">Jae</div>
+      </div>
+
+      <!-- Final message placeholder -->
+      <div class="d5-final-msg">
+        <div class="d5-final-msg-text" id="d5-final-msg-text">
+          <!-- ═══════════════════════════════════════════════
+               FINAL MESSAGE — WRITE THIS YOURSELF.
+               This is the last thing she reads.
+               No format. No structure. Just honest.
+               Replace this placeholder with your actual words.
+               Font: Cormorant Garamond italic, 20px, var(--text-secondary)
+               Max-width: 480px, margin: 0 auto
+               ═══════════════════════════════════════════════ -->
+          [Jae — write your final message here. This is the last thing she reads.]
+        </div>
+      </div>
+
+      <!-- Barcode strip -->
+      <div class="d5-barcode-strip">
+        <svg class="barcode-svg" width="100" height="32" viewBox="0 0 100 32">
+          <rect x="0" y="0" width="2" height="32" fill="#c47a6a"/><rect x="4" y="0" width="1" height="32" fill="#c47a6a"/>
+          <rect x="7" y="0" width="3" height="32" fill="#c47a6a"/><rect x="12" y="0" width="1" height="32" fill="#c47a6a"/>
+          <rect x="15" y="0" width="2" height="32" fill="#c47a6a"/><rect x="19" y="0" width="4" height="32" fill="#c47a6a"/>
+          <rect x="25" y="0" width="1" height="32" fill="#c47a6a"/><rect x="28" y="0" width="2" height="32" fill="#c47a6a"/>
+          <rect x="32" y="0" width="1" height="32" fill="#c47a6a"/><rect x="35" y="0" width="3" height="32" fill="#c47a6a"/>
+          <rect x="40" y="0" width="2" height="32" fill="#c47a6a"/><rect x="44" y="0" width="1" height="32" fill="#c47a6a"/>
+          <rect x="47" y="0" width="4" height="32" fill="#c47a6a"/><rect x="53" y="0" width="1" height="32" fill="#c47a6a"/>
+          <rect x="56" y="0" width="2" height="32" fill="#c47a6a"/><rect x="60" y="0" width="3" height="32" fill="#c47a6a"/>
+          <rect x="65" y="0" width="1" height="32" fill="#c47a6a"/><rect x="68" y="0" width="2" height="32" fill="#c47a6a"/>
+          <rect x="72" y="0" width="4" height="32" fill="#c47a6a"/><rect x="78" y="0" width="1" height="32" fill="#c47a6a"/>
+          <rect x="81" y="0" width="3" height="32" fill="#c47a6a"/><rect x="86" y="0" width="2" height="32" fill="#c47a6a"/>
+          <rect x="90" y="0" width="1" height="32" fill="#c47a6a"/><rect x="93" y="0" width="4" height="32" fill="#c47a6a"/>
+          <rect x="99" y="0" width="1" height="32" fill="#c47a6a"/>
+        </svg>
+        <div class="d5-since">YIN /// SINCE ALWAYS</div>
+        <div class="d5-forever">IT'S LOVE ♡</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 10 WAYS MODAL ══ -->
+<div class="ten-ways-modal" id="ten-ways-modal">
+  <div class="ten-ways-close" id="ten-ways-close">close ×</div>
+  <div id="ten-ways-content">
+    <!-- Populated by JS -->
+  </div>
+</div>
+
+<!-- ══ BIRTHDAY MODAL ══ -->
+<div class="birthday-modal-overlay" id="birthday-modal">
+  <div class="birthday-modal">
+    <div class="modal-close" id="modal-close">×</div>
+    <div class="modal-ticker">
+      <div class="live-ticker-track">
+        <span>FOR YIN</span><span>✦</span>
+        <span>KEEP THIS WORLD ALIVE</span><span>✦</span>
+        <span>FILL THIS IN</span><span>✦</span>
+        <span>FROM J WITH EVERYTHING</span><span>✦</span>
+        <span>FOR YIN</span><span>✦</span>
+        <span>KEEP THIS WORLD ALIVE</span><span>✦</span>
+        <span>FILL THIS IN</span><span>✦</span>
+        <span>FROM J WITH EVERYTHING</span><span>✦</span>
+        <span>FOR YIN</span><span>✦</span>
+        <span>KEEP THIS WORLD ALIVE</span><span>✦</span>
+        <span>FILL THIS IN</span><span>✦</span>
+        <span>FROM J WITH EVERYTHING</span><span>✦</span>
+      </div>
+    </div>
+    <div class="modal-header">
+      <div class="modal-kicker">SUPPLEMENTARY ISSUE · EYES ONLY · MAY 29</div>
+      <div class="modal-title">
+        want to keep our<br>little world alive<br>a bit longer?
+      </div>
+      <div class="modal-subtitle">
+        if this made you smile even a little —<br>
+        fill this in and i'll keep the site running past today.
+      </div>
+    </div>
+    <div class="modal-form" id="modal-form">
+      <!-- Field 1: Shoe Size -->
+      <div class="modal-field">
+        <div class="modal-field-label">SHOE SIZE <span class="modal-field-tag">already knew this one 😉</span></div>
+        <div class="modal-field-display">41</div>
+        <div class="modal-field-note">i've been paying attention</div>
+      </div>
+      <!-- Field 2: Dress Size -->
+      <div class="modal-field">
+        <div class="modal-field-label">DRESS SIZE <span class="modal-field-tag">for future reference 🎁</span></div>
+        <input type="text" id="field-dress" placeholder="S, M, UK 10…">
+      </div>
+      <!-- Field 3 -->
+      <div class="modal-field">
+        <div class="modal-field-label">SOMETHING YOU'VE ALWAYS WANTED TO SAY TO ME</div>
+        <textarea id="field-say" rows="4" placeholder="this is a safe place. i'll read it slowly."></textarea>
+      </div>
+      <!-- Field 4 -->
+      <div class="modal-field">
+        <div class="modal-field-label">A FAVOURITE MEMORY OF US SO FAR</div>
+        <textarea id="field-memory" rows="3" placeholder="even something small…"></textarea>
+      </div>
+      <!-- Field 5 -->
+      <div class="modal-field">
+        <div class="modal-field-label">SOMETHING YOU WANT TO EXPERIENCE BUT HAVEN'T ASKED FOR YET</div>
+        <textarea id="field-experience" rows="3" placeholder="anything. i won't judge. i'll probably just plan it."></textarea>
+      </div>
+      <div class="modal-divider"></div>
+      <!-- Field 6 -->
+      <div class="modal-field">
+        <div class="modal-field-label">A PLACE YOU'VE ALWAYS WANTED TO GO <span class="modal-field-tag">trip planning 🌍</span></div>
+        <input type="text" id="field-place" placeholder="anywhere in the world…">
+      </div>
+      <!-- Field 7 -->
+      <div class="modal-field">
+        <div class="modal-field-label">A SONG THAT FEELS LIKE RIGHT NOW <span class="modal-field-tag">adding it tonight</span></div>
+        <input type="text" id="field-song" placeholder="artist · title…">
+      </div>
+      <!-- Field 8: Surprise Rating -->
+      <div class="modal-field">
+        <div class="modal-field-label">RATE YOUR SURPRISE RIGHT NOW <span class="modal-field-tag">be honest</span></div>
+        <div class="modal-petals" id="modal-petals">
+          <span class="modal-petal" data-val="1">🌸</span>
+          <span class="modal-petal" data-val="2">🌸</span>
+          <span class="modal-petal" data-val="3">🌸</span>
+          <span class="modal-petal" data-val="4">🌸</span>
+          <span class="modal-petal" data-val="5">🌸</span>
+          <span class="modal-petal" data-val="6">🌸</span>
+          <span class="modal-petal" data-val="7">🌸</span>
+          <span class="modal-petal" data-val="8">🌸</span>
+          <span class="modal-petal" data-val="9">🌸</span>
+          <span class="modal-petal" data-val="10">🌸</span>
+        </div>
+        <input type="hidden" id="field-surprise" value="0">
+      </div>
+      <button class="modal-submit" id="modal-submit">Keep this world alive for me →</button>
+    </div>
+    <div class="modal-success" id="modal-success">
+      <div class="modal-success-icon">🌸</div>
+      <div class="modal-success-title">got it. thank you.</div>
+      <div class="modal-success-body">
+        i'll read every word.<br><br>
+        happy birthday, Yin.<br>
+        — J
+      </div>
+      <div class="modal-success-promise">this site will stay up. i promise.</div>
+    </div>
+  </div>
+</div>
+
+<script src="main.js"></script>
+</body>
+</html>

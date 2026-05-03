@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm run build)",
+      "Bash(pnpm run typecheck*)",
+      "Bash(pnpm install*)",
+      "Bash(pnpm *)",
+      "Bash(npm run build)",
+      "Bash(npm run typecheck*)",
+      "Bash(mkdir*)",
+      "Bash(ls*)",
+      "Bash(which*)"
+    ]
+  }
+}
