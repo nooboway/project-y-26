@@ -120,7 +120,7 @@ router.put("/admin/live", requireAdmin, async (req: any, res: any): Promise<void
 router.get("/admin/days", requireAdmin, async (_req: any, res: any): Promise<void> => {
   const site = await loadSite();
   const rows = await db.select().from(daysTable).orderBy(daysTable.index);
-  res.json(AdminListDaysResponse.parse(rows.map((d) => ({
+  res.json(AdminListDaysResponse.parse(rows.map((d: any) => ({
     slug: d.slug,
     index: d.index,
     title: d.title,
