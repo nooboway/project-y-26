@@ -1,15 +1,5 @@
 {
-  "buildCommand": "pnpm --filter @workspace/for-yin run build",
   "outputDirectory": "artifacts/for-yin/dist/public",
-  "installCommand": "pnpm install",
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/index.ts"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/index.html"
-    }
-  ]
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install"
 }
