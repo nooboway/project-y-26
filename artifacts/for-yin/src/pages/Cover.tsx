@@ -6,6 +6,17 @@ import { useAudio } from "@/lib/audio";
 import { usePageMeta } from "@/lib/meta";
 import { motion } from "framer-motion";
 
+// Igbo titles — always visible, even when day is locked.
+// These are intentionally hardcoded: they are permanent creative decisions,
+// not configurable content. Each maps 1:1 to day index (1-5).
+const IGBO_TITLES = [
+  'Ụtọ', // Day 1 — sweetness
+  'Echiche', // Day 2 — thoughts
+  'Obi m', // Day 3 — my heart
+  'Ifunanya', // Day 4 — love
+  'Ndụ m', // Day 5 — my life
+] as const;
+
 export default function Cover() {
   const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey(), refetchInterval: 60_000 } });
   const { data: days } = useListDays({ query: { queryKey: getListDaysQueryKey(), refetchInterval: 60_000 } });
@@ -153,11 +164,22 @@ export default function Cover() {
 
                 <div>
                   <div className="uppercase-mono opacity-60">{d.eyebrow}</div>
-                  <div className="font-serif italic text-xl mt-1 leading-tight">
-                    {d.unlocked ? d.title : "—"}
+                  <div
+                    className="font-serif italic text-xl mt-1 leading-tight"
+                    style={{ opacity: d.unlocked ? 1 : 0.28 }}
+                  >
+                    {IGBO_TITLES[d.index - 1] ?? d.title}
                   </div>
                   <div className="uppercase-mono mt-2 opacity-60">
-                    {d.unlocked ? d.kind : new Date(d.unlockDate).toUTCString().slice(0, 11)}
+                    {d.unlocked
+                      ? d.eyebrow
+                      : `comes alive ${new Date(d.unlockDate)
+                          .toLocaleDateString('en-GB', {
+                            weekday: 'short',
+                            day: '2-digit',
+                            month: 'short',
+                          })
+                          .toUpperCase()}`}
                   </div>
                 </div>
 
