@@ -4,7 +4,7 @@ import siteRouter from "./site";
 import daysRouter from "./days";
 import adminRouter from "./admin";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.use(healthRouter);
 router.use(siteRouter);

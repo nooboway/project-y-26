@@ -10,7 +10,7 @@ import {
 } from "@workspace/api-zod";
 import { loadSite, loadDays, computeDayIndex, dayUnlockDateIso } from "../lib/lock";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.get("/days", async (_req, res): Promise<void> => {
   const site = await loadSite();

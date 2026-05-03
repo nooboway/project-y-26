@@ -17,7 +17,7 @@ import {
 } from "@workspace/api-zod";
 import { loadSite, dayUnlockDateIso } from "../lib/lock";
 
-const router: IRouter = Router();
+const router = Router();
 
 const ADMIN_PASSPHRASE = process.env.ADMIN_PASSPHRASE ?? "love-yin-2026";
 const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET ?? "for-yin-secret-please-rotate";
@@ -146,7 +146,7 @@ router.get("/admin/days", requireAdmin, async (_req, res): Promise<void> => {
 
 router.get("/admin/seen", requireAdmin, async (_req, res): Promise<void> => {
   const rows = await db.select().from(daysTable).orderBy(daysTable.index);
-  res.json(AdminListSeenResponse.parse(rows.map((d) => ({
+  res.json(AdminListSeenResponse.parse(rows.map((d: any) => ({
     slug: d.slug,
     title: d.title,
     openedAt: d.openedAt ? d.openedAt.toISOString() : null,

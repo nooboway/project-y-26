@@ -6,7 +6,7 @@ import {
 } from "@workspace/api-zod";
 import { loadSite, loadDays, computeDayIndex } from "../lib/lock.js";
 
-const router: IRouter = Router();
+const router = Router();
 
 router.get("/site", async (_req, res): Promise<void> => {
   const site = await loadSite();
