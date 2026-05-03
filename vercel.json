@@ -1,5 +1,5 @@
 {
-  "buildCommand": "pnpm build --filter @workspace/for-yin",
+  "buildCommand": "pnpm --filter @workspace/for-yin run build",
   "outputDirectory": "artifacts/for-yin/dist/public",
   "installCommand": "pnpm install",
   "rewrites": [
