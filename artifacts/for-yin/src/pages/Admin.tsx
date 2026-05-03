@@ -23,6 +23,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminHeaders, getAdminToken, setAdminToken } from "@/lib/admin";
+import { MediaUpload } from '@/components/MediaUpload';
 
 function Login({ onIn }: { onIn: () => void }) {
   const [pass, setPass] = useState("");
@@ -216,8 +217,23 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             <option value="gallery">gallery</option>
             <option value="birthday">birthday</option>
           </select></label>
-        <label><div className="uppercase-mono opacity-70 mb-1">hero image url</div>
-          <input className="field" value={d.heroImage ?? ""} onChange={(e) => set({ heroImage: e.target.value })} /></label>
+        <div className="sm:col-span-1">
+          <div className="uppercase-mono opacity-70 mb-1">Hero Image</div>
+          <MediaUpload
+            accept="image/*"
+            label="Upload hero photo"
+            token={getAdminToken() ?? ""}
+            currentUrl={d.heroImage ?? ""}
+            onUploaded={(r) => set({ heroImage: r.url })}
+          />
+          <input
+            className="field"
+            type="text"
+            placeholder="or paste URL directly"
+            value={d.heroImage ?? ""}
+            onChange={(e) => set({ heroImage: e.target.value })}
+          />
+        </div>
         <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">body</div>
           <textarea className="field" rows={8} value={d.body ?? ""} onChange={(e) => set({ body: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">pull quote</div>
@@ -230,8 +246,23 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           <input className="field" value={d.songArtist ?? ""} onChange={(e) => set({ songArtist: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">youtube id</div>
           <input className="field" value={d.youtubeId ?? ""} onChange={(e) => set({ youtubeId: e.target.value })} /></label>
-        <label><div className="uppercase-mono opacity-70 mb-1">voice note url (mp3/m4a/ogg)</div>
-          <input className="field" value={d.voiceNoteUrl ?? ""} onChange={(e) => set({ voiceNoteUrl: e.target.value })} /></label>
+        <div className="sm:col-span-1">
+          <div className="uppercase-mono opacity-70 mb-1">Voice Note (mp3/m4a/ogg)</div>
+          <MediaUpload
+            accept="audio/*"
+            label="Upload audio (mp3, m4a, wav)"
+            token={getAdminToken() ?? ""}
+            currentUrl={d.voiceNoteUrl ?? ""}
+            onUploaded={(r) => set({ voiceNoteUrl: r.url })}
+          />
+          <input
+            className="field"
+            type="text"
+            placeholder="or paste URL directly"
+            value={d.voiceNoteUrl ?? ""}
+            onChange={(e) => set({ voiceNoteUrl: e.target.value })}
+          />
+        </div>
         <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">preview text · whispered when locked</div>
           <input className="field" value={d.previewText ?? ""} onChange={(e) => set({ previewText: e.target.value })} placeholder="a hint she'll see on the locked door…" /></label>
         <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">signature svg · paste raw &lt;svg&gt;…&lt;/svg&gt; (used on letter / birthday)</div>
@@ -269,16 +300,33 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
         <div className="sm:col-span-2">
           <div className="uppercase-mono opacity-70 mb-2">gallery (for kind=gallery / birthday)</div>
           {gallery.map((g: GalleryImage, i: number) => (
-            <div key={i} className="grid grid-cols-1 sm:grid-cols-[2fr_2fr_80px_60px] gap-2 mb-2">
-              <input className="field" placeholder="image url" value={g.url}
-                     onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: e.target.value } : x) })} />
-              <input className="field" placeholder="caption" value={g.caption}
-                     onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, caption: e.target.value } : x) })} />
-              <select className="field" value={g.span}
-                      onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, span: e.target.value as unknown as GalleryImageSpan } : x) })}>
-                <option value="s">s</option><option value="m">m</option><option value="l">l</option><option value="xl">xl</option>
-              </select>
-              <button type="button" className="btn-pill" onClick={() => set({ gallery: gallery.filter((_, j) => j !== i) })}>×</button>
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 p-3 border hairline bg-paper/30">
+              <div className="sm:col-span-1">
+                <MediaUpload
+                  accept="image/*"
+                  label={`Gallery photo ${i + 1}`}
+                  token={getAdminToken() ?? ""}
+                  currentUrl={g.url}
+                  onUploaded={(r) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: r.url } : x) })}
+                />
+                <input
+                  className="field"
+                  placeholder="or paste photo URL"
+                  value={g.url}
+                  onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: e.target.value } : x) })}
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <input className="field" placeholder="caption" value={g.caption}
+                       onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, caption: e.target.value } : x) })} />
+                <div className="flex gap-2">
+                  <select className="field" value={g.span}
+                          onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, span: e.target.value as unknown as GalleryImageSpan } : x) })}>
+                    <option value="s">s</option><option value="m">m</option><option value="l">l</option><option value="xl">xl</option>
+                  </select>
+                  <button type="button" className="btn-pill" onClick={() => set({ gallery: gallery.filter((_, j) => j !== i) })}>×</button>
+                </div>
+              </div>
             </div>
           ))}
           <button type="button" className="btn-pill mt-2" onClick={() => set({ gallery: [...gallery, { url: "", caption: "", span: "m" as unknown as GalleryImageSpan }] })}>+ image</button>

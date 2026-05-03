@@ -1,5 +1,5 @@
 import express from "express";
-import { eq, sql } from "drizzle-orm";
+import { eq, sql } from "@workspace/db";
 import { db, daysTable } from "@workspace/db";
 import {
   ListDaysResponse,
