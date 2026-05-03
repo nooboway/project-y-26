@@ -1,9 +1,10 @@
 import { Router, type IRouter } from "express";
+import { logger } from "./logger.js";
 import {
   GetSiteResponse,
   GetLiveMessageResponse,
 } from "@workspace/api-zod";
-import { loadSite, loadDays, computeDayIndex } from "../lib/lock";
+import { loadSite, loadDays, computeDayIndex } from "../lib/lock.js";
 
 const router: IRouter = Router();
 

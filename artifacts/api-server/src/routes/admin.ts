@@ -15,7 +15,7 @@ import {
   AdminUpdateDayResponse,
   AdminListSeenResponse,
 } from "@workspace/api-zod";
-import { loadSite, dayUnlockDateIso } from "../lib/lock";
+import { loadSite, dayUnlockDateIso } from "../lib/lock.js";
 
 const router: IRouter = Router();
 
