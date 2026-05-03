@@ -52,6 +52,7 @@ export const GetLiveMessageResponse = zod.object({
 export const ListDaysResponseItem = zod.object({
   slug: zod.string(),
   index: zod.number(),
+  igboTitle: zod.string(),
   title: zod.string(),
   eyebrow: zod.string(),
   kind: zod.enum([
@@ -80,6 +81,7 @@ export const GetDayParams = zod.object({
 export const GetDayResponse = zod.object({
   slug: zod.string(),
   index: zod.number(),
+  igboTitle: zod.string(),
   title: zod.string(),
   eyebrow: zod.string(),
   kind: zod.enum([
@@ -256,6 +258,7 @@ export const AdminListDaysHeader = zod.object({
 export const AdminListDaysResponseItem = zod.object({
   slug: zod.string(),
   index: zod.number(),
+  igboTitle: zod.string(),
   title: zod.string(),
   eyebrow: zod.string(),
   kind: zod.enum([
@@ -312,6 +315,7 @@ export const AdminUpdateDayHeader = zod.object({
 
 export const AdminUpdateDayBody = zod.object({
   title: zod.string().optional(),
+  igboTitle: zod.string().optional(),
   eyebrow: zod.string().optional(),
   kind: zod
     .enum(["letter", "magazine", "drafts", "why-you", "gallery", "birthday"])
@@ -349,6 +353,7 @@ export const AdminUpdateDayBody = zod.object({
 export const AdminUpdateDayResponse = zod.object({
   slug: zod.string(),
   index: zod.number(),
+  igboTitle: zod.string(),
   title: zod.string(),
   eyebrow: zod.string(),
   kind: zod.enum([

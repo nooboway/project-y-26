@@ -168,7 +168,7 @@ export default function Cover() {
                     className="font-serif italic text-xl mt-1 leading-tight"
                     style={{ opacity: d.unlocked ? 1 : 0.28 }}
                   >
-                    {IGBO_TITLES[d.index - 1] ?? d.title}
+                    {d.igboTitle || IGBO_TITLES[d.index - 1] || d.title}
                   </div>
                   <div className="uppercase-mono mt-2 opacity-60">
                     {d.unlocked

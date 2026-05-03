@@ -18,6 +18,7 @@ export const siteConfigTable = pgTable("site_config", {
 export const daysTable = pgTable("days", {
   slug: text("slug").primaryKey(),
   index: integer("index").notNull(),
+  igboTitle: text("igbo_title").notNull().default(""),
   title: text("title").notNull(),
   eyebrow: text("eyebrow").notNull().default(""),
   kind: text("kind").notNull(),

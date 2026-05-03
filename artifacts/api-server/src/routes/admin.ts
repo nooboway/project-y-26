@@ -123,6 +123,7 @@ router.get("/admin/days", requireAdmin, async (_req: any, res: any): Promise<voi
   res.json(AdminListDaysResponse.parse(rows.map((d) => ({
     slug: d.slug,
     index: d.index,
+    igboTitle: d.igboTitle,
     title: d.title,
     eyebrow: d.eyebrow,
     kind: d.kind,
@@ -180,6 +181,7 @@ router.put("/admin/days/:slug", requireAdmin, async (req: any, res: any): Promis
   res.json(AdminUpdateDayResponse.parse({
     slug: updated.slug,
     index: updated.index,
+    igboTitle: updated.igboTitle,
     title: updated.title,
     eyebrow: updated.eyebrow,
     kind: updated.kind,

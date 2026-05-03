@@ -151,6 +151,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
     drafts: day.drafts ?? [],
     reasons: day.reasons ?? [],
     gallery: day.gallery ?? [],
+    igboTitle: day.igboTitle ?? "",
     heroImage: day.heroImage ?? "",
     body: day.body ?? "",
     pullQuote: day.pullQuote ?? "",
@@ -175,6 +176,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
       slug: d.slug,
       data: {
         title: d.title,
+        igboTitle: d.igboTitle,
         eyebrow: d.eyebrow,
         kind: d.kind as unknown as DayKind,
         heroImage: d.heroImage,
@@ -206,6 +208,22 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
       <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t hairline">
         <label><div className="uppercase-mono opacity-70 mb-1">title</div>
           <input className="field" value={d.title} onChange={(e) => set({ title: e.target.value })} /></label>
+        <div>
+          <label className="block mb-1">
+            <div className="uppercase-mono opacity-70">Igbo Title</div>
+            <input
+              type="text"
+              className="field"
+              value={d.igboTitle ?? ''}
+              onChange={(e) => set({ igboTitle: e.target.value })}
+              placeholder="e.g. Ụtọ"
+            />
+          </label>
+          <div className="uppercase-mono opacity-40 text-[9px] mt-1">
+            Visible on the home screen — locked and unlocked.
+            Do not change unless you are certain.
+          </div>
+        </div>
         <label><div className="uppercase-mono opacity-70 mb-1">eyebrow</div>
           <input className="field" value={d.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">kind</div>

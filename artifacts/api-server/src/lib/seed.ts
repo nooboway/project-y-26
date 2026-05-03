@@ -6,6 +6,7 @@ const DAYS_SEED = [
   {
     slug: "day-1",
     index: 1,
+    igboTitle: "Ụtọ",
     title: "An Issue Made For You",
     eyebrow: "ISSUE 01 — THE OPENING",
     kind: "letter",
@@ -24,6 +25,7 @@ const DAYS_SEED = [
   {
     slug: "day-2",
     index: 2,
+    igboTitle: "Echiche",
     title: "The Cover Story",
     eyebrow: "ISSUE 02 — THE FEATURE",
     kind: "magazine",
@@ -41,6 +43,7 @@ const DAYS_SEED = [
   {
     slug: "day-3",
     index: 3,
+    igboTitle: "Obi m",
     title: "Drafts I Never Sent",
     eyebrow: "ISSUE 03 — THE FOLDER",
     kind: "drafts",
@@ -65,6 +68,7 @@ const DAYS_SEED = [
   {
     slug: "day-4",
     index: 4,
+    igboTitle: "Ifunanya",
     title: "Why You",
     eyebrow: "ISSUE 04 — THE LIST",
     kind: "why-you",
@@ -91,6 +95,7 @@ const DAYS_SEED = [
   {
     slug: "day-5",
     index: 5,
+    igboTitle: "Ndụ m",
     title: "HAPPY BIRTHDAY YIN",
     eyebrow: "ISSUE 05 — THE DAY",
     kind: "birthday",
@@ -150,6 +155,7 @@ export async function ensureSeed(): Promise<void> {
       await db.insert(daysTable).values({
         slug: d.slug,
         index: d.index,
+        igboTitle: d.igboTitle,
         title: d.title,
         eyebrow: d.eyebrow,
         kind: d.kind,

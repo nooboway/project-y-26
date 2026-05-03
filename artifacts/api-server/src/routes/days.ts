@@ -24,6 +24,7 @@ router.get("/days", async (_req: any, res: any): Promise<void> => {
     return {
       slug: d.slug,
       index: d.index,
+      igboTitle: d.igboTitle,
       title: unlocked ? d.title : "Locked",
       eyebrow: unlocked ? d.eyebrow : "Comes alive soon",
       kind: d.kind as "letter" | "magazine" | "drafts" | "why-you" | "gallery" | "birthday",
@@ -70,6 +71,7 @@ router.get("/days/:slug", async (req: any, res: any): Promise<void> => {
   res.json(GetDayResponse.parse({
     slug: day.slug,
     index: day.index,
+    igboTitle: day.igboTitle,
     title: day.title,
     eyebrow: day.eyebrow,
     kind: day.kind,
