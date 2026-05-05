@@ -120,7 +120,7 @@ router.put("/admin/live", requireAdmin, async (req: any, res: any): Promise<void
 router.get("/admin/days", requireAdmin, async (_req: any, res: any): Promise<void> => {
   const site = await loadSite();
   const rows = await db.select().from(daysTable).orderBy(daysTable.index);
-  res.json(AdminListDaysResponse.parse(rows.map((d) => ({
+  res.json(AdminListDaysResponse.parse(rows.map((d: any) => ({
     slug: d.slug,
     index: d.index,
     igboTitle: d.igboTitle,
@@ -142,6 +142,8 @@ router.get("/admin/days", requireAdmin, async (_req: any, res: any): Promise<voi
     drafts: d.drafts,
     reasons: d.reasons,
     gallery: d.gallery,
+    scratchCards: JSON.parse(d.scratchCards || "[]"),
+    slides: JSON.parse(d.slides || "[]"),
   }))));
 });
 
@@ -168,9 +170,13 @@ router.put("/admin/days/:slug", requireAdmin, async (req: any, res: any): Promis
     res.status(400).json({ error: parsed.error.message });
     return;
   }
+  const updateData = { ...parsed.data } as any;
+  if (updateData.scratchCards) updateData.scratchCards = JSON.stringify(updateData.scratchCards);
+  if (updateData.slides) updateData.slides = JSON.stringify(updateData.slides);
+
   const [updated] = await db
     .update(daysTable)
-    .set(parsed.data)
+    .set(updateData)
     .where(eq(daysTable.slug, slug))
     .returning();
   if (!updated) {
@@ -200,6 +206,8 @@ router.put("/admin/days/:slug", requireAdmin, async (req: any, res: any): Promis
     drafts: updated.drafts,
     reasons: updated.reasons,
     gallery: updated.gallery,
+    scratchCards: JSON.parse(updated.scratchCards || "[]"),
+    slides: JSON.parse(updated.slides || "[]"),
   }));
 });
 

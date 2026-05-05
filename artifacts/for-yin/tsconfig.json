@@ -9,9 +9,11 @@
     "resolveJsonModule": true,
     "allowImportingTsExtensions": true,
     "moduleResolution": "bundler",
-    "types": ["node", "vite/client"],
+    "typeRoots": ["./node_modules/@types", "../../node_modules/@types"],
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@assets/*": ["../../attached_assets/*"]
     }
   },
   "references": [

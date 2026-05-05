@@ -432,3 +432,114 @@ input.field:focus, textarea.field:focus, select.field:focus {
 /* invisible scrollbars on horizontal strips */
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* v3.0 Interactive Components */
+
+/* Scratch Card */
+.scratch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 24px;
+}
+.scratch-card {
+  position: relative;
+  aspect-ratio: 4/3;
+  cursor: crosshair;
+  background: var(--paper);
+  border: 1px solid rgba(12,10,10,0.12);
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+.scratch-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  text-align: center;
+}
+.scratch-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  touch-action: none;
+}
+
+/* Terminal */
+.terminal-window {
+  background: #0c0c0c;
+  color: #00ff41;
+  font-family: var(--font-mono);
+  padding: 24px;
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+  min-height: 400px;
+  border: 1px solid rgba(0,255,65,0.2);
+}
+.terminal-cursor {
+  display: inline-block;
+  width: 8px;
+  height: 18px;
+  background: #00ff41;
+  margin-left: 4px;
+  animation: blink 1s step-end infinite;
+}
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+/* Slideshow */
+.slideshow-wrap {
+  position: relative;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--cream);
+  min-height: 500px;
+}
+.slide-item {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+}
+
+/* Envelope Gate */
+.envelope-gate {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--cream);
+  display: grid;
+  place-items: center;
+}
+.envelope {
+  width: 320px;
+  height: 200px;
+  background: #fbf3e6;
+  position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.envelope:hover {
+  transform: translateY(-10px) scale(1.02);
+}
+.envelope-flap {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 120px;
+  background: #f4eadc;
+  clip-path: polygon(0 0, 50% 100%, 100% 0);
+  z-index: 2;
+  transition: transform 0.6s ease;
+  transform-origin: top;
+}
+.envelope.open .envelope-flap {
+  transform: rotateX(180deg);
+}

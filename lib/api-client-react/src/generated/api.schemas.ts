@@ -53,11 +53,16 @@ export const DaySummaryKind = {
   "why-you": "why-you",
   gallery: "gallery",
   birthday: "birthday",
+  scratch: "scratch",
+  terminal: "terminal",
+  voicememo: "voicememo",
+  slideshow: "slideshow",
 } as const;
 
 export interface DaySummary {
   slug: string;
   index: number;
+  igboTitle: string;
   title: string;
   eyebrow: string;
   kind: DaySummaryKind;
@@ -97,6 +102,16 @@ export interface DraftItem {
   crossed: boolean;
 }
 
+export interface ScratchCard {
+  front: string;
+  hidden: string;
+}
+
+export interface Slide {
+  body: string;
+  sub?: string;
+}
+
 export type DayKind = (typeof DayKind)[keyof typeof DayKind];
 
 export const DayKind = {
@@ -106,11 +121,16 @@ export const DayKind = {
   "why-you": "why-you",
   gallery: "gallery",
   birthday: "birthday",
+  scratch: "scratch",
+  terminal: "terminal",
+  voicememo: "voicememo",
+  slideshow: "slideshow",
 } as const;
 
 export interface Day {
   slug: string;
   index: number;
+  igboTitle: string;
   title: string;
   eyebrow: string;
   kind: DayKind;
@@ -130,6 +150,9 @@ export interface Day {
   drafts?: DraftItem[];
   reasons?: string[];
   gallery?: GalleryImage[];
+  scratchCards?: ScratchCard[];
+  slides?: Slide[];
+  audioUrl?: string;
 }
 
 export interface AdminLoginBody {
@@ -179,10 +202,15 @@ export const AdminUpdateDayBodyKind = {
   "why-you": "why-you",
   gallery: "gallery",
   birthday: "birthday",
+  scratch: "scratch",
+  terminal: "terminal",
+  voicememo: "voicememo",
+  slideshow: "slideshow",
 } as const;
 
 export interface AdminUpdateDayBody {
   title?: string;
+  igboTitle?: string;
   eyebrow?: string;
   kind?: AdminUpdateDayBodyKind;
   heroImage?: string;
@@ -198,6 +226,9 @@ export interface AdminUpdateDayBody {
   drafts?: DraftItem[];
   reasons?: string[];
   gallery?: GalleryImage[];
+  scratchCards?: ScratchCard[];
+  slides?: Slide[];
+  audioUrl?: string;
 }
 
 export interface SeenStamp {

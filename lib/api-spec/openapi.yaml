@@ -301,7 +301,7 @@ components:
         eyebrow: { type: string }
         kind:
           type: string
-          enum: [letter, magazine, drafts, why-you, gallery, birthday]
+          enum: [letter, magazine, drafts, why-you, gallery, birthday, scratch, terminal, voicememo, slideshow]
         unlocked: { type: boolean }
         isToday: { type: boolean }
         unlockDate: { type: string }
@@ -318,6 +318,24 @@ components:
         message: { type: string }
         previewText: { type: string }
       required: [slug, index, unlockDate, message, previewText]
+
+    ScratchCard:
+      type: object
+      properties:
+        front:
+          type: string
+        hidden:
+          type: string
+      required: [front, hidden]
+
+    Slide:
+      type: object
+      properties:
+        body:
+          type: string
+        sub:
+          type: string
+      required: [body]
 
     GalleryImage:
       type: object
@@ -345,7 +363,7 @@ components:
         eyebrow: { type: string }
         kind:
           type: string
-          enum: [letter, magazine, drafts, why-you, gallery, birthday]
+          enum: [letter, magazine, drafts, why-you, gallery, birthday, scratch, terminal, voicememo, slideshow]
         unlockDate: { type: string }
         heroImage: { type: string }
         body: { type: string, description: "Long-form prose, markdown-ish" }
@@ -367,6 +385,14 @@ components:
         gallery:
           type: array
           items: { $ref: "#/components/schemas/GalleryImage" }
+        scratchCards:
+          type: array
+          items: { $ref: "#/components/schemas/ScratchCard" }
+        slides:
+          type: array
+          items: { $ref: "#/components/schemas/Slide" }
+        audioUrl:
+          type: string
       required:
         [slug, index, title, eyebrow, kind, unlockDate, body]
 
@@ -426,7 +452,7 @@ components:
         eyebrow: { type: string }
         kind:
           type: string
-          enum: [letter, magazine, drafts, why-you, gallery, birthday]
+          enum: [letter, magazine, drafts, why-you, gallery, birthday, scratch, terminal, voicememo, slideshow]
         heroImage: { type: string }
         body: { type: string }
         pullQuote: { type: string }

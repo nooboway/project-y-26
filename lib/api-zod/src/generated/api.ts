@@ -62,6 +62,10 @@ export const ListDaysResponseItem = zod.object({
     "why-you",
     "gallery",
     "birthday",
+    "scratch",
+    "terminal",
+    "voicememo",
+    "slideshow",
   ]),
   unlocked: zod.boolean(),
   isToday: zod.boolean(),
@@ -91,6 +95,10 @@ export const GetDayResponse = zod.object({
     "why-you",
     "gallery",
     "birthday",
+    "scratch",
+    "terminal",
+    "voicememo",
+    "slideshow",
   ]),
   unlockDate: zod.string(),
   heroImage: zod.string().optional(),
@@ -112,6 +120,23 @@ export const GetDayResponse = zod.object({
       }),
     )
     .optional(),
+  scratchCards: zod
+    .array(
+      zod.object({
+        front: zod.string(),
+        hidden: zod.string(),
+      }),
+    )
+    .optional(),
+  slides: zod
+    .array(
+      zod.object({
+        body: zod.string(),
+        sub: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  audioUrl: zod.string().optional(),
   reasons: zod.array(zod.string()).optional(),
   gallery: zod
     .array(
@@ -268,6 +293,10 @@ export const AdminListDaysResponseItem = zod.object({
     "why-you",
     "gallery",
     "birthday",
+    "scratch",
+    "terminal",
+    "voicememo",
+    "slideshow",
   ]),
   unlockDate: zod.string(),
   heroImage: zod.string().optional(),
@@ -289,6 +318,23 @@ export const AdminListDaysResponseItem = zod.object({
       }),
     )
     .optional(),
+  scratchCards: zod
+    .array(
+      zod.object({
+        front: zod.string(),
+        hidden: zod.string(),
+      }),
+    )
+    .optional(),
+  slides: zod
+    .array(
+      zod.object({
+        body: zod.string(),
+        sub: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  audioUrl: zod.string().optional(),
   reasons: zod.array(zod.string()).optional(),
   gallery: zod
     .array(
@@ -318,8 +364,36 @@ export const AdminUpdateDayBody = zod.object({
   igboTitle: zod.string().optional(),
   eyebrow: zod.string().optional(),
   kind: zod
-    .enum(["letter", "magazine", "drafts", "why-you", "gallery", "birthday"])
+    .enum([
+      "letter",
+      "magazine",
+      "drafts",
+      "why-you",
+      "gallery",
+      "birthday",
+      "scratch",
+      "terminal",
+      "voicememo",
+      "slideshow",
+    ])
     .optional(),
+  scratchCards: zod
+    .array(
+      zod.object({
+        front: zod.string(),
+        hidden: zod.string(),
+      }),
+    )
+    .optional(),
+  slides: zod
+    .array(
+      zod.object({
+        body: zod.string(),
+        sub: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  audioUrl: zod.string().optional(),
   heroImage: zod.string().optional(),
   body: zod.string().optional(),
   pullQuote: zod.string().optional(),
@@ -363,6 +437,10 @@ export const AdminUpdateDayResponse = zod.object({
     "why-you",
     "gallery",
     "birthday",
+    "scratch",
+    "terminal",
+    "voicememo",
+    "slideshow",
   ]),
   unlockDate: zod.string(),
   heroImage: zod.string().optional(),
@@ -384,6 +462,23 @@ export const AdminUpdateDayResponse = zod.object({
       }),
     )
     .optional(),
+  scratchCards: zod
+    .array(
+      zod.object({
+        front: zod.string(),
+        hidden: zod.string(),
+      }),
+    )
+    .optional(),
+  slides: zod
+    .array(
+      zod.object({
+        body: zod.string(),
+        sub: zod.string().optional(),
+      }),
+    )
+    .optional(),
+  audioUrl: zod.string().optional(),
   reasons: zod.array(zod.string()).optional(),
   gallery: zod
     .array(

@@ -144,9 +144,9 @@ export function MediaUpload({
         tabIndex={0}
         aria-label={label}
         onClick={() => inputRef.current?.click()}
-        onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={(e) => {
+        onKeyDown={(e: any) => e.key === 'Enter' && inputRef.current?.click()}
+        onDragOver={(e: any) => e.preventDefault()}
+        onDrop={(e: any) => {
           e.preventDefault();
           const file = e.dataTransfer.files[0];
           if (file) handleFile(file);
@@ -228,7 +228,7 @@ export function MediaUpload({
         type="file"
         accept={accept}
         style={{ display: 'none' }}
-        onChange={(e) => {
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (file) handleFile(file);
           // Reset so same file can be re-uploaded after error

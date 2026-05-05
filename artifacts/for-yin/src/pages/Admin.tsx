@@ -33,7 +33,7 @@ function Login({ onIn }: { onIn: () => void }) {
     <div className="admin-shell grid place-items-center px-5 py-20">
       <form
         className="w-full max-w-md border hairline p-8"
-        onSubmit={async (e) => {
+        onSubmit={async (e: any) => {
           e.preventDefault();
           setErr(null);
           try {
@@ -53,7 +53,7 @@ function Login({ onIn }: { onIn: () => void }) {
           type="password"
           autoFocus
           value={pass}
-          onChange={(e) => setPass(e.target.value)}
+          onChange={(e: any) => setPass(e.target.value)}
         />
         {err && <div className="mt-3 text-sm" style={{ color: "var(--rose-dust)" }}>{err}</div>}
         <button className="btn-solid mt-6 w-full justify-center" disabled={login.isPending} type="submit">
@@ -79,13 +79,13 @@ function SiteEditor({ onChanged }: { onChanged: () => void }) {
   const { data, refetch } = useAdminGetSite({ request: { headers }, query: { queryKey: getAdminGetSiteQueryKey() } });
   const update = useAdminUpdateSite();
   const [form, setForm] = useState<any>(null);
-  useEffect(() => { if (data) setForm({ ...data }); }, [data]);
+  useEffect(() => { if (data) setForm({ ...(data as any) }); }, [data]);
   if (!form) return <Section title="site"><div className="opacity-60">loading…</div></Section>;
   const F = (k: string, label: string, type: "text" | "number" | "color" = "text", small = false) => (
     <label className={small ? "block" : "block sm:col-span-2"}>
       <div className="uppercase-mono opacity-70 mb-1">{label}</div>
       <input className="field" type={type} value={form[k] ?? ""}
-             onChange={(e) => setForm({ ...form, [k]: type === "number" ? Number(e.target.value) : e.target.value })} />
+             onChange={(e: any) => setForm({ ...form, [k]: type === "number" ? Number(e.target.value) : e.target.value })} />
     </label>
   );
   return (
@@ -132,7 +132,7 @@ function LiveEditor({ onChanged }: { onChanged: () => void }) {
   return (
     <Section title="live · ticker message (cross-device, polled every 60s)">
       <textarea className="field" rows={3} placeholder="thinking about you, in the cab, right now."
-                value={text} onChange={(e) => setText(e.target.value)} />
+                value={text} onChange={(e: any) => setText(e.target.value)} />
       <div className="mt-4">
         <button className="btn-solid" disabled={update.isPending || !text.trim()}
           onClick={async () => {
@@ -162,6 +162,8 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
     signatureSvg: day.signatureSvg ?? "",
     voiceNoteUrl: day.voiceNoteUrl ?? "",
     previewText: day.previewText ?? "",
+    scratchCards: day.scratchCards ?? [],
+    slides: day.slides ?? [],
   };
   const [d, setD] = useState<ApiDay>(initial);
   const update = useAdminUpdateDay();
@@ -169,6 +171,8 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
   const drafts: DraftItem[] = d.drafts ?? [];
   const reasons: string[] = d.reasons ?? [];
   const gallery: GalleryImage[] = d.gallery ?? [];
+  const scratchCards: any[] = d.scratchCards ?? [];
+  const slides: any[] = d.slides ?? [];
   const set = (patch: Partial<ApiDay>) => setD((p: ApiDay) => ({ ...p, ...patch }));
 
   const save = async () => {
@@ -189,9 +193,12 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
         drafts,
         reasons,
         gallery,
+        scratchCards,
+        slides,
         signatureSvg: d.signatureSvg ?? "",
         voiceNoteUrl: d.voiceNoteUrl ?? "",
         previewText: d.previewText ?? "",
+        audioUrl: d.audioUrl ?? "",
       },
     }, { onSuccess: () => onChanged() });
   };
@@ -207,7 +214,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
       </summary>
       <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t hairline">
         <label><div className="uppercase-mono opacity-70 mb-1">title</div>
-          <input className="field" value={d.title} onChange={(e) => set({ title: e.target.value })} /></label>
+          <input className="field" value={d.title} onChange={(e: any) => set({ title: e.target.value })} /></label>
         <div>
           <label className="block mb-1">
             <div className="uppercase-mono opacity-70">Igbo Title</div>
@@ -215,7 +222,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
               type="text"
               className="field"
               value={d.igboTitle ?? ''}
-              onChange={(e) => set({ igboTitle: e.target.value })}
+              onChange={(e: any) => set({ igboTitle: e.target.value })}
               placeholder="e.g. Ụtọ"
             />
           </label>
@@ -234,6 +241,10 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             <option value="why-you">why-you</option>
             <option value="gallery">gallery</option>
             <option value="birthday">birthday</option>
+            <option value="scratch">scratch</option>
+            <option value="terminal">terminal</option>
+            <option value="voicememo">voicememo</option>
+            <option value="slideshow">slideshow</option>
           </select></label>
         <div className="sm:col-span-1">
           <div className="uppercase-mono opacity-70 mb-1">Hero Image</div>
@@ -348,6 +359,38 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             </div>
           ))}
           <button type="button" className="btn-pill mt-2" onClick={() => set({ gallery: [...gallery, { url: "", caption: "", span: "m" as unknown as GalleryImageSpan }] })}>+ image</button>
+        </div>
+
+        <div className="sm:col-span-2">
+          <div className="uppercase-mono opacity-70 mb-2">scratch cards (for kind=scratch)</div>
+          {scratchCards.map((c: any, i: number) => (
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 p-2 border hairline">
+              <input className="field" placeholder="Front text" value={c.front}
+                     onChange={(e) => set({ scratchCards: scratchCards.map((x, j) => j === i ? { ...x, front: e.target.value } : x) })} />
+              <div className="flex gap-2">
+                <input className="field flex-1" placeholder="Hidden text" value={c.hidden}
+                       onChange={(e) => set({ scratchCards: scratchCards.map((x, j) => j === i ? { ...x, hidden: e.target.value } : x) })} />
+                <button type="button" className="btn-pill" onClick={() => set({ scratchCards: scratchCards.filter((_, j) => j !== i) })}>×</button>
+              </div>
+            </div>
+          ))}
+          <button type="button" className="btn-pill mt-2" onClick={() => set({ scratchCards: [...scratchCards, { front: "", hidden: "" }] })}>+ card</button>
+        </div>
+
+        <div className="sm:col-span-2">
+          <div className="uppercase-mono opacity-70 mb-2">slides (for kind=slideshow)</div>
+          {slides.map((s: any, i: number) => (
+            <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 p-2 border hairline">
+              <input className="field" placeholder="Body text (large)" value={s.body}
+                     onChange={(e) => set({ slides: slides.map((x, j) => j === i ? { ...x, body: e.target.value } : x) })} />
+              <div className="flex gap-2">
+                <input className="field flex-1" placeholder="Subtext (small)" value={s.sub}
+                       onChange={(e) => set({ slides: slides.map((x, j) => j === i ? { ...x, sub: e.target.value } : x) })} />
+                <button type="button" className="btn-pill" onClick={() => set({ slides: slides.filter((_, j) => j !== i) })}>×</button>
+              </div>
+            </div>
+          ))}
+          <button type="button" className="btn-pill mt-2" onClick={() => set({ slides: [...slides, { body: "", sub: "" }] })}>+ slide</button>
         </div>
 
         <div className="sm:col-span-2 flex items-center gap-3">

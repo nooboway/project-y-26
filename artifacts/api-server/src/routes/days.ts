@@ -27,7 +27,7 @@ router.get("/days", async (_req: any, res: any): Promise<void> => {
       igboTitle: d.igboTitle,
       title: unlocked ? d.title : "Locked",
       eyebrow: unlocked ? d.eyebrow : "Comes alive soon",
-      kind: d.kind as "letter" | "magazine" | "drafts" | "why-you" | "gallery" | "birthday",
+      kind: d.kind as any,
       unlocked,
       isToday: d.index === currentDayIndex,
       unlockDate: dayUnlockDateIso(site.startDate, d.index),
@@ -74,7 +74,7 @@ router.get("/days/:slug", async (req: any, res: any): Promise<void> => {
     igboTitle: day.igboTitle,
     title: day.title,
     eyebrow: day.eyebrow,
-    kind: day.kind,
+    kind: day.kind as any,
     unlockDate: dayUnlockDateIso(site.startDate, day.index),
     heroImage: day.heroImage,
     body: day.body,
@@ -90,6 +90,8 @@ router.get("/days/:slug", async (req: any, res: any): Promise<void> => {
     drafts: day.drafts,
     reasons: day.reasons,
     gallery: day.gallery,
+    scratchCards: JSON.parse((day as any).scratchCards || "[]"),
+    slides: JSON.parse((day as any).slides || "[]"),
   }));
 });
 

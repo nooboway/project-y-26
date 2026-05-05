@@ -1,4 +1,4 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import multer from 'multer';
 import { v2 as cloudinary } from 'cloudinary';
 
@@ -27,67 +27,83 @@ function verifyToken(token: string | undefined): boolean {
     .createHmac('sha256', TOKEN_SECRET)
     .update(`${ts}.${nonce}`)
     .digest('hex');
-  if (sig.length !== expect.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect));
-}
-
-function requireAdmin(req: any, res: any, next: any): void {
-  if (!verifyToken(req.header('x-admin-token'))) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
-  next();
+  return sig === expect;
 }
 
 const router = express.Router();
 
 router.post(
   '/admin/upload',
-  requireAdmin,
-  upload.single('file'),
-  async (req: any, res: any): Promise<void> => {
-    if (!req.file) {
-      res.status(400).json({ error: 'No file provided' });
+  (req: Request, res: Response): void => {
+    // HMAC Verification
+    const token = req.headers['x-admin-token'];
+
+    if (!token) {
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-    // Determine Cloudinary resource_type from MIME type
-    // Cloudinary uses 'video' for both video AND audio
-    const mime = req.file.mimetype ?? '';
-    const resourceType: 'image' | 'video' | 'raw' = mime.startsWith('video/')
-      ? 'video'
-      : mime.startsWith('audio/')
-      ? 'video'
-      : mime.startsWith('image/')
-      ? 'image'
-      : 'raw';
 
-    try {
-      const result = await new Promise<any>((resolve, reject) => {
-        const stream = cloudinary.uploader.upload_stream(
-          {
-            folder: 'project-y-26',
-            resource_type: resourceType,
-            use_filename: true,
-            unique_filename: true,
-          },
-          (err, result) => (err ? reject(err) : resolve(result))
-        );
-        stream.end(req.file!.buffer);
-      });
-      res.json({
-        url: result.secure_url as string,
-        publicId: result.public_id as string,
-        resourceType: result.resource_type as string,
-        format: result.format as string,
-        width: result.width as number | undefined,
-        height: result.height as number | undefined,
-        duration: result.duration as number | undefined,
-        bytes: result.bytes as number,
-      });
-    } catch (err: any) {
-      console.error('[upload] cloudinary error', err);
-      res.status(500).json({ error: err?.message ?? 'Upload failed' });
+    const [receivedHmac, timestamp] = String(token).split('.');
+    if (!receivedHmac || !timestamp) {
+      res.status(401).json({ error: 'Invalid token format' });
+      return;
     }
+
+    const expectedHmac = crypto
+      .createHmac('sha256', TOKEN_SECRET)
+      .update(timestamp)
+      .digest('hex');
+
+    if (receivedHmac !== expectedHmac) {
+      res.status(401).json({ error: 'Invalid token' });
+      return;
+    }
+
+    const now = Math.floor(Date.now() / 1000);
+    const tokenTime = parseInt(timestamp, 10);
+    if (now - tokenTime > 60 * 60 * 24) {
+      res.status(401).json({ error: 'Token expired' });
+      return;
+    }
+
+    // Process Upload
+    upload.single('file')(req as any, res as any, (err: any) => {
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+
+      if (!(req as any).file) {
+        res.status(400).json({ error: 'No file uploaded' });
+        return;
+      }
+
+      // Upload to Cloudinary using stream
+      const stream = cloudinary.uploader.upload_stream(
+        {
+          folder: 'project-y-26',
+          resource_type: 'auto',
+        },
+        (error: any, result: any) => {
+          if (error) {
+            res.status(500).json({ error: error.message });
+            return;
+          }
+          res.json({
+            url: result.secure_url,
+            publicId: result.public_id,
+            resourceType: result.resource_type,
+            format: result.format,
+            width: result.width,
+            height: result.height,
+            duration: result.duration,
+            bytes: result.bytes,
+          });
+        }
+      );
+
+      stream.end((req as any).file.buffer);
+    });
   }
 );
 

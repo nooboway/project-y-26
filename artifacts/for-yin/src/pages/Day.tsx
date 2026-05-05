@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { Link, useLocation, useRoute } from "wouter";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   useGetDay,
   useGetSite,
@@ -13,7 +14,6 @@ import { useAudio } from "@/lib/audio";
 import { heroForDay, galleryFallback, IMG } from "@/lib/assets";
 import { pingSeenOnce } from "@/lib/seen";
 import { usePageMeta } from "@/lib/meta";
-import { motion } from "framer-motion";
 
 function BackBar({ index, kind }: { index: number; kind: string }) {
   return (
@@ -380,31 +380,280 @@ function ReplyForm({ slug }: { slug: string }) {
   );
 }
 
+function ScratchCard({ front, hidden }: { front: string; hidden: string }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [scratched, setScratched] = useState(false);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    ctx.fillStyle = "#c0c0c0";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < 1000; i++) {
+      ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`;
+      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
+    }
+
+    let isDrawing = false;
+    const scratch = (x: number, y: number) => {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(x, y, 25, 0, Math.PI * 2);
+      ctx.fill();
+    };
+
+    const handleStart = (e: any) => { isDrawing = true; handleMove(e); };
+    const handleEnd = () => { isDrawing = false; };
+    const handleMove = (e: any) => {
+      if (!isDrawing) return;
+      const rect = canvas.getBoundingClientRect();
+      const x = ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * (canvas.width / rect.width);
+      const y = ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * (canvas.height / rect.height);
+      scratch(x, y);
+    };
+
+    canvas.addEventListener("mousedown", handleStart);
+    canvas.addEventListener("touchstart", handleStart);
+    window.addEventListener("mouseup", handleEnd);
+    window.addEventListener("touchend", handleEnd);
+    canvas.addEventListener("mousemove", handleMove);
+    canvas.addEventListener("touchmove", handleMove);
+
+    return () => {
+      canvas.removeEventListener("mousedown", handleStart);
+      canvas.removeEventListener("touchstart", handleStart);
+      window.removeEventListener("mouseup", handleEnd);
+      window.removeEventListener("touchend", handleEnd);
+      canvas.removeEventListener("mousemove", handleMove);
+      canvas.removeEventListener("touchmove", handleMove);
+    };
+  }, []);
+
+  return (
+    <div className="scratch-card">
+      <div className="scratch-content">
+        <div className="uppercase-mono opacity-50 mb-2">{front}</div>
+        <div className="font-serif text-xl">{hidden}</div>
+      </div>
+      <canvas ref={canvasRef} width={400} height={300} className="scratch-canvas" />
+    </div>
+  );
+}
+
+function ScratchLayout({ day }: { day: ApiDay }) {
+  return (
+    <PageFrame>
+      <BackBar index={day.index} kind={day.kind} />
+      <HeroBlock day={day} />
+      <div className="max-w-4xl mx-auto px-5 sm:px-10 py-12">
+        <p className="font-serif text-xl mb-10 whitespace-pre-wrap">{day.body}</p>
+        <div className="scratch-grid">
+          {(day.scratchCards ?? []).map((c, i) => (
+            <ScratchCard key={i} front={c.front} hidden={c.hidden} />
+          ))}
+        </div>
+      </div>
+      <SongBlock day={day} />
+      <Ticker />
+    </PageFrame>
+  );
+}
+
+function TerminalLayout({ day }: { day: ApiDay }) {
+  const [lines, setLines] = useState<string[]>(["Initializing system...", "Loading encrypted memory...", "Done.", "Type 'help' for commands."]);
+  const [input, setInput] = useState("");
+  const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [lines]);
+
+  const handleCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cmd = input.toLowerCase().trim();
+    if (!cmd) return;
+    let response = `Command not found: ${cmd}`;
+    if (cmd === "help") response = "Available commands: bio, secret, clear, date";
+    if (cmd === "bio") response = "Subject: Yin. Status: Extraordinary. Location: Deep in my thoughts.";
+    if (cmd === "secret") response = "I still have that napkin from the first night.";
+    if (cmd === "date") response = new Date().toString();
+    if (cmd === "clear") { setLines([]); setInput(""); return; }
+
+    setLines(prev => [...prev, `> ${input}`, response]);
+    setInput("");
+  };
+
+  return (
+    <PageFrame dark>
+      <BackBar index={day.index} kind={day.kind} />
+      <div className="max-w-3xl mx-auto px-5 sm:px-10 py-12">
+        <div className="terminal-window">
+          <div className="space-y-1 mb-4 h-[300px] overflow-y-auto no-scrollbar font-mono text-sm sm:text-base">
+            {lines.map((l, i) => <div key={i}>{l}</div>)}
+            <div ref={endRef} />
+          </div>
+          <form onSubmit={handleCommand} className="flex items-center font-mono text-sm sm:text-base">
+            <span className="mr-2 text-[#00ff41]">{">"}</span>
+            <input 
+              type="text" 
+              className="bg-transparent border-none outline-none flex-1 text-[#00ff41]" 
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              autoFocus
+            />
+            <span className="terminal-cursor" />
+          </form>
+        </div>
+        <p className="font-serif text-cream text-lg mt-8 opacity-70 italic whitespace-pre-wrap">{day.body}</p>
+      </div>
+      <SongBlock day={day} />
+    </PageFrame>
+  );
+}
+
+function VoiceMemoLayout({ day }: { day: ApiDay }) {
+  return (
+    <PageFrame>
+      <BackBar index={day.index} kind={day.kind} />
+      <div className="max-w-2xl mx-auto px-5 sm:px-10 py-20 text-center">
+        <div className="w-20 h-20 bg-rose-deep rounded-full mx-auto mb-8 flex items-center justify-center shadow-lg" style={{ color: "var(--cream)" }}>
+           <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/><path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/></svg>
+        </div>
+        <h1 className="font-display text-6xl mb-4 uppercase">{day.title}</h1>
+        <p className="font-serif italic text-xl mb-10 opacity-70 whitespace-pre-wrap">{day.body}</p>
+        <VoiceNoteBlock url={day.voiceNoteUrl} />
+        <div className="mt-12 font-serif italic text-xl">{day.signoff}</div>
+      </div>
+      <SongBlock day={day} />
+      <Ticker />
+    </PageFrame>
+  );
+}
+
+function SlideshowLayout({ day }: { day: ApiDay }) {
+  const [index, setIndex] = useState(0);
+  const slides = day.slides ?? [];
+
+  return (
+    <PageFrame dark>
+      <BackBar index={day.index} kind={day.kind} />
+      <div className="slideshow-wrap mt-10 flex flex-col items-center justify-center">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -40 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="slide-item"
+          >
+            <div className="font-display text-5xl sm:text-8xl mb-6 text-center leading-[0.9] max-w-4xl uppercase">
+              {slides[index]?.body}
+            </div>
+            {slides[index]?.sub && (
+              <div className="uppercase-mono text-rose-dust text-sm sm:text-base tracking-[0.3em]">
+                {slides[index].sub}
+              </div>
+            )}
+          </motion.div>
+        </AnimatePresence>
+        
+        <div className="absolute bottom-12 inset-x-0 flex justify-center items-center gap-8">
+          <button 
+            className="btn-pill hairline-cream py-2 px-6" 
+            onClick={() => setIndex(prev => Math.max(0, prev - 1))}
+            disabled={index === 0}
+          >PREV</button>
+          <div className="font-mono text-xs opacity-40 tracking-widest">
+            {index + 1} / {slides.length}
+          </div>
+          <button 
+            className="btn-pill hairline-cream py-2 px-6" 
+            onClick={() => setIndex(prev => Math.min(slides.length - 1, prev + 1))}
+            disabled={index === slides.length - 1}
+          >NEXT</button>
+        </div>
+      </div>
+      <div className="max-w-3xl mx-auto px-5 sm:px-10 py-12 text-cream opacity-60 font-serif italic text-xl text-center whitespace-pre-wrap">
+        {day.body}
+      </div>
+      <SongBlock day={day} />
+    </PageFrame>
+  );
+}
+
 function BirthdayLayout({ day }: { day: ApiDay }) {
+  const [isOpened, setIsOpened] = useState(false);
   const audio = useAudio();
   const onBlow = () => {
     if (day.youtubeId) audio.play(day.youtubeId);
   };
+
   return (
     <PageFrame>
+      <AnimatePresence>
+        {!isOpened && (
+          <motion.div 
+            className="envelope-gate"
+            exit={{ opacity: 0, transition: { duration: 1 } }}
+          >
+            <div className="text-center">
+              <motion.div 
+                className="envelope"
+                whileHover={{ y: -5 }}
+                onClick={() => setIsOpened(true)}
+              >
+                <div className="envelope-flap" />
+                <div className="absolute inset-0 grid place-items-center font-serif italic text-3xl pt-8">
+                  For Yin
+                </div>
+              </motion.div>
+              <div className="uppercase-mono mt-12 opacity-40 animate-pulse">tap to unlock the day</div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <BackBar index={day.index} kind={day.kind} />
       <div className="px-5 sm:px-10 mt-6">
-        <div className="uppercase-mono opacity-60">{day.eyebrow}</div>
-        <h1
-          className="font-display leading-[0.78] text-mask-flower mt-3"
-          style={{
-            fontSize: "clamp(72px, 22vw, 360px)",
-            ["--mask-image" as any]: `url(${IMG.birthdayFloral})`,
-          }}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={isOpened ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
         >
-          HAPPY<br/>BIRTHDAY<br/>YIN
-        </h1>
-        <div className="font-serif italic text-2xl mt-6" style={{ color: "var(--rose-deep)" }}>
+          <div className="uppercase-mono opacity-60">{day.eyebrow}</div>
+          <h1
+            className="font-display leading-[0.78] text-mask-flower mt-3"
+            style={{
+              fontSize: "clamp(72px, 22vw, 360px)",
+              ["--mask-image" as any]: `url(${IMG.birthdayFloral})`,
+            }}
+          >
+            HAPPY<br/>BIRTHDAY<br/>YIN
+          </h1>
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={isOpened ? { opacity: 1 } : {}}
+          transition={{ delay: 0.8, duration: 1.5 }}
+          className="font-serif italic text-2xl mt-6" 
+          style={{ color: "var(--rose-deep)" }}
+        >
           today is the headline. no subhead.
-        </div>
+        </motion.div>
       </div>
 
-      <CandleMoment onBlow={onBlow} />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={isOpened ? { opacity: 1, scale: 1 } : {}}
+        transition={{ delay: 1.4, duration: 1 }}
+      >
+        <CandleMoment onBlow={onBlow} />
+      </motion.div>
 
       <article className="max-w-3xl mx-auto px-5 sm:px-10 py-12 font-serif text-xl sm:text-2xl leading-[1.55] drop-cap whitespace-pre-wrap">
         {day.body}
@@ -426,6 +675,7 @@ function BirthdayLayout({ day }: { day: ApiDay }) {
       </div>
 
       <SongBlock day={day} />
+      <Ticker />
     </PageFrame>
   );
 }
@@ -479,12 +729,16 @@ export default function DayPage() {
 
   void site;
   switch (day.kind) {
-    case "letter":   return <LetterLayout day={day} />;
-    case "magazine": return <MagazineLayout day={day} />;
-    case "drafts":   return <DraftsLayout day={day} />;
-    case "why-you":  return <WhyYouLayout day={day} />;
-    case "gallery":  return <GalleryLayout day={day} />;
-    case "birthday": return <BirthdayLayout day={day} />;
-    default:         return <LetterLayout day={day} />;
+    case "letter":    return <LetterLayout day={day} />;
+    case "magazine":  return <MagazineLayout day={day} />;
+    case "drafts":    return <DraftsLayout day={day} />;
+    case "why-you":   return <WhyYouLayout day={day} />;
+    case "gallery":   return <GalleryLayout day={day} />;
+    case "birthday":  return <BirthdayLayout day={day} />;
+    case "scratch":   return <ScratchLayout day={day} />;
+    case "terminal":  return <TerminalLayout day={day} />;
+    case "voicememo": return <VoiceMemoLayout day={day} />;
+    case "slideshow": return <SlideshowLayout day={day} />;
+    default:          return <LetterLayout day={day} />;
   }
 }
