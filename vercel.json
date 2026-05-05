@@ -1,5 +1,10 @@
 {
   "outputDirectory": "artifacts/for-yin/dist/public",
+  "functions": {
+    "api/index.ts": {
+      "includeFiles": "artifacts/api-server/src/**"
+    }
+  },
   "buildCommand": "pnpm run build",
   "installCommand": "pnpm install",
   "headers": [
