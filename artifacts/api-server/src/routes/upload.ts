@@ -34,7 +34,7 @@ const router = express.Router();
 
 router.post(
   '/admin/upload',
-  (req: Request, res: Response): void => {
+  (req: any, res: any): void => {
     // HMAC Verification
     const token = req.headers['x-admin-token'];
 
@@ -67,13 +67,13 @@ router.post(
     }
 
     // Process Upload
-    upload.single('file')(req as any, res as any, (err: any) => {
+    (upload.single('file') as any)(req, res, (err: any) => {
       if (err) {
         res.status(400).json({ error: err.message });
         return;
       }
 
-      if (!(req as any).file) {
+      if (!req.file) {
         res.status(400).json({ error: 'No file uploaded' });
         return;
       }
@@ -98,11 +98,12 @@ router.post(
             height: result.height,
             duration: result.duration,
             bytes: result.bytes,
+            url_secure: result.secure_url,
           });
         }
       );
 
-      stream.end((req as any).file.buffer);
+      stream.end(req.file.buffer);
     });
   }
 );
