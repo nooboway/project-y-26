@@ -1,9 +1,9 @@
 import express from "express";
-import healthRouter from "./health";
-import siteRouter from "./site";
-import daysRouter from "./days";
-import adminRouter from "./admin";
-import uploadRouter from "./upload";
+import healthRouter from "./health.js";
+import siteRouter from "./site.js";
+import daysRouter from "./days.js";
+import adminRouter from "./admin.js";
+import uploadRouter from "./upload.js";
 
 const router = express.Router();
 
