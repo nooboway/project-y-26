@@ -2,7 +2,7 @@
   "outputDirectory": "artifacts/for-yin/dist/public",
   "functions": {
     "api/index.ts": {
-      "includeFiles": "artifacts/api-server/src/**"
+      "includeFiles": "artifacts/api-server/dist/**"
     }
   },
   "buildCommand": "pnpm run build",
