@@ -161,6 +161,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
     youtubeId: day.youtubeId ?? "",
     signatureSvg: day.signatureSvg ?? "",
     voiceNoteUrl: day.voiceNoteUrl ?? "",
+    audioUrl: day.audioUrl ?? "",
     previewText: day.previewText ?? "",
     scratchCards: day.scratchCards ?? [],
     slides: day.slides ?? [],
@@ -290,6 +291,23 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             placeholder="or paste URL directly"
             value={d.voiceNoteUrl ?? ""}
             onChange={(e) => set({ voiceNoteUrl: e.target.value })}
+          />
+        </div>
+        <div className="sm:col-span-1">
+          <div className="uppercase-mono opacity-70 mb-1">Audio URL (for kind=voicememo)</div>
+          <MediaUpload
+            accept="audio/*"
+            label="Upload audio file"
+            token={getAdminToken() ?? ""}
+            currentUrl={d.audioUrl ?? ""}
+            onUploaded={(r) => set({ audioUrl: r.url })}
+          />
+          <input
+            className="field"
+            type="text"
+            placeholder="or paste audio URL directly"
+            value={d.audioUrl ?? ""}
+            onChange={(e) => set({ audioUrl: e.target.value })}
           />
         </div>
         <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">preview text · whispered when locked</div>
@@ -468,12 +486,12 @@ export default function Admin() {
   const days = useAdminListDays({ request: { headers }, query: { queryKey: getAdminListDaysQueryKey(), enabled: authed } });
 
   const invalidateAll = () => {
-    qc.invalidateQueries({ queryKey: getGetSiteQueryKey() });
-    qc.invalidateQueries({ queryKey: getGetLiveMessageQueryKey() });
-    qc.invalidateQueries({ queryKey: getListDaysQueryKey() });
-    qc.invalidateQueries({ queryKey: getAdminGetSiteQueryKey() });
-    qc.invalidateQueries({ queryKey: getAdminListDaysQueryKey() });
-    days.data?.forEach((d) => qc.invalidateQueries({ queryKey: getGetDayQueryKey(d.slug) }));
+    qc.refetchQueries({ queryKey: getGetSiteQueryKey() });
+    qc.refetchQueries({ queryKey: getGetLiveMessageQueryKey() });
+    qc.refetchQueries({ queryKey: getListDaysQueryKey() });
+    qc.refetchQueries({ queryKey: getAdminGetSiteQueryKey() });
+    qc.refetchQueries({ queryKey: getAdminListDaysQueryKey() });
+    days.data?.forEach((d) => qc.refetchQueries({ queryKey: getGetDayQueryKey(d.slug) }));
   };
 
   // If token is invalid (e.g. server restarted secret), drop it.

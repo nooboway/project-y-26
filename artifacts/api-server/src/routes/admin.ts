@@ -144,6 +144,7 @@ router.get("/admin/days", requireAdmin, async (_req: any, res: any): Promise<voi
     gallery: d.gallery,
     scratchCards: JSON.parse(d.scratchCards || "[]"),
     slides: JSON.parse(d.slides || "[]"),
+    audioUrl: d.audioUrl ?? "",
   }))));
 });
 
@@ -208,6 +209,7 @@ router.put("/admin/days/:slug", requireAdmin, async (req: any, res: any): Promis
     gallery: updated.gallery,
     scratchCards: JSON.parse(updated.scratchCards || "[]"),
     slides: JSON.parse(updated.slides || "[]"),
+    audioUrl: updated.audioUrl ?? "",
   }));
 });
 

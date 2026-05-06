@@ -92,6 +92,7 @@ router.get("/days/:slug", async (req: any, res: any): Promise<void> => {
     gallery: day.gallery,
     scratchCards: JSON.parse((day as any).scratchCards || "[]"),
     slides: JSON.parse((day as any).slides || "[]"),
+    audioUrl: day.audioUrl ?? "",
   }));
 });
 

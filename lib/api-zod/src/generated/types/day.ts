@@ -9,9 +9,20 @@ import type { DayKind } from "./dayKind";
 import type { DraftItem } from "./draftItem";
 import type { GalleryImage } from "./galleryImage";
 
+export interface ScratchCard {
+  front: string;
+  hidden: string;
+}
+
+export interface Slide {
+  body: string;
+  sub?: string;
+}
+
 export interface Day {
   slug: string;
   index: number;
+  igboTitle: string;
   title: string;
   eyebrow: string;
   kind: DayKind;
@@ -31,4 +42,7 @@ export interface Day {
   drafts?: DraftItem[];
   reasons?: string[];
   gallery?: GalleryImage[];
+  scratchCards?: ScratchCard[];
+  slides?: Slide[];
+  audioUrl?: string;
 }

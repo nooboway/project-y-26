@@ -10,6 +10,7 @@ import type { DaySummaryKind } from "./daySummaryKind";
 export interface DaySummary {
   slug: string;
   index: number;
+  igboTitle: string;
   title: string;
   eyebrow: string;
   kind: DaySummaryKind;

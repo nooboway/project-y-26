@@ -154,6 +154,7 @@ export async function ensureSeed(): Promise<void> {
         scratchCards: JSON.stringify((d as any).scratchCards || []),
         slides: JSON.stringify((d as any).slides || []),
         voiceNoteUrl: (d as any).voiceNoteUrl || "",
+        audioUrl: (d as any).audioUrl || "",
       });
     }
     logger.info({ count: DAYS_SEED.length }, "Seeded days v3.0");

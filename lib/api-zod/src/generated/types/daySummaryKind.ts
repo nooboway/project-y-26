@@ -16,4 +16,8 @@ export const DaySummaryKind = {
   "why-you": "why-you",
   gallery: "gallery",
   birthday: "birthday",
+  scratch: "scratch",
+  terminal: "terminal",
+  voicememo: "voicememo",
+  slideshow: "slideshow",
 } as const;

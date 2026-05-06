@@ -34,6 +34,7 @@ export const daysTable = pgTable("days", {
   gallery: jsonb("gallery").$type<{ url: string; caption: string; span: "s" | "m" | "l" | "xl" }[]>().notNull().default([]),
   scratchCards: text("scratch_cards").notNull().default("[]"),
   slides: text("slides").notNull().default("[]"),
+  audioUrl: text("audio_url").notNull().default(""),
   signatureSvg: text("signature_svg").notNull().default(""),
   voiceNoteUrl: text("voice_note_url").notNull().default(""),
   previewText: text("preview_text").notNull().default(""),

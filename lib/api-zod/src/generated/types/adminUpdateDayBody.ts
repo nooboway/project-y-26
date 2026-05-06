@@ -8,9 +8,11 @@
 import type { AdminUpdateDayBodyKind } from "./adminUpdateDayBodyKind";
 import type { DraftItem } from "./draftItem";
 import type { GalleryImage } from "./galleryImage";
+import type { ScratchCard, Slide } from "./day";
 
 export interface AdminUpdateDayBody {
   title?: string;
+  igboTitle?: string;
   eyebrow?: string;
   kind?: AdminUpdateDayBodyKind;
   heroImage?: string;
@@ -26,4 +28,7 @@ export interface AdminUpdateDayBody {
   drafts?: DraftItem[];
   reasons?: string[];
   gallery?: GalleryImage[];
+  scratchCards?: ScratchCard[];
+  slides?: Slide[];
+  audioUrl?: string;
 }

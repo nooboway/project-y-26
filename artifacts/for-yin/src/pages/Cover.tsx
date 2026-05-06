@@ -18,8 +18,8 @@ const IGBO_TITLES = [
 ] as const;
 
 export default function Cover() {
-  const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey(), refetchInterval: 60_000, refetchOnMount: 'always' } });
-  const { data: days } = useListDays({ query: { queryKey: getListDaysQueryKey(), refetchInterval: 60_000, refetchOnMount: 'always' } });
+  const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey(), refetchInterval: 10_000, refetchOnMount: 'always' } });
+  const { data: days } = useListDays({ query: { queryKey: getListDaysQueryKey(), refetchInterval: 10_000, refetchOnMount: 'always' } });
   const [, navigate] = useLocation();
   const audio = useAudio();
   usePageMeta({

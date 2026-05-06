@@ -686,7 +686,7 @@ export default function DayPage() {
   const [, navigate] = useLocation();
   const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey() } });
   const { data: day, error, isLoading } = useGetDay(slug, {
-    query: { queryKey: getGetDayQueryKey(slug), retry: false, enabled: Boolean(slug) },
+    query: { queryKey: getGetDayQueryKey(slug), retry: false, enabled: Boolean(slug), refetchInterval: 10_000 },
   });
   const audio = useAudio();
 
