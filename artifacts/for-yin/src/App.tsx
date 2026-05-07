@@ -38,7 +38,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AudioProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter base={((import.meta as any).env.BASE_URL || "").replace(/\/$/, "")}>
           <Routes />
           <FloatingAudio />
         </WouterRouter>

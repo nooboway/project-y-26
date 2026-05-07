@@ -123,6 +123,7 @@ export async function ensureSeed(): Promise<void> {
       coordinatesPlace: "the corner where we first met",
       unlockOverride: 0,
       liveText: "thinking about you, right now.",
+      liveUpdatedAt: new Date(),
     });
     logger.info("Seeded site_config");
   }
@@ -155,6 +156,12 @@ export async function ensureSeed(): Promise<void> {
         slides: JSON.stringify((d as any).slides || []),
         voiceNoteUrl: (d as any).voiceNoteUrl || "",
         audioUrl: (d as any).audioUrl || "",
+        heroImage: (d as any).heroImage || "",
+        signatureSvg: (d as any).signatureSvg || "",
+        previewText: (d as any).previewText || "",
+        replyText: (d as any).replyText || "",
+        replyAt: null,
+        openedAt: null,
       });
     }
     logger.info({ count: DAYS_SEED.length }, "Seeded days v3.0");

@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Request, Response } from "express";
 import { eq, sql } from "@workspace/db";
 import { db, daysTable } from "@workspace/db";
 import {
@@ -12,7 +12,7 @@ import { loadSite, loadDays, computeDayIndex, dayUnlockDateIso } from "../lib/lo
 
 const router = express.Router();
 
-router.get("/days", async (_req: any, res: any): Promise<void> => {
+router.get("/days", async (_req: Request, res: Response): Promise<void> => {
   const site = await loadSite();
   const days = await loadDays();
   const now = new Date();
@@ -38,7 +38,7 @@ router.get("/days", async (_req: any, res: any): Promise<void> => {
   res.json(ListDaysResponse.parse(summaries));
 });
 
-router.get("/days/:slug", async (req: any, res: any): Promise<void> => {
+router.get("/days/:slug", async (req: Request, res: Response): Promise<void> => {
   const slugRaw = req.params.slug;
   const slug = Array.isArray(slugRaw) ? slugRaw[0] : slugRaw;
   if (typeof slug !== "string") {
@@ -96,7 +96,7 @@ router.get("/days/:slug", async (req: any, res: any): Promise<void> => {
   }));
 });
 
-router.post("/days/:slug/seen", async (req: any, res: any): Promise<void> => {
+router.post("/days/:slug/seen", async (req: Request, res: Response): Promise<void> => {
   const slug = String(req.params.slug ?? "");
   if (!slug) { res.status(400).json({ error: "Invalid slug" }); return; }
   const [existing] = await db.select().from(daysTable).where(eq(daysTable.slug, slug));
@@ -117,7 +117,7 @@ router.post("/days/:slug/seen", async (req: any, res: any): Promise<void> => {
   res.json(MarkDaySeenResponse.parse({ ok: true, firstOpen }));
 });
 
-router.post("/days/:slug/reply", async (req: any, res: any): Promise<void> => {
+router.post("/days/:slug/reply", async (req: Request, res: Response): Promise<void> => {
   const slug = String(req.params.slug ?? "");
   const parsed = SendDayReplyBody.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }

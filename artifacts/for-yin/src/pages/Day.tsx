@@ -155,7 +155,7 @@ function DraftsLayout({ day }: { day: ApiDay }) {
         <p className="font-serif italic text-xl mt-4 max-w-xl" style={{ color: "var(--mauve)" }}>{day.body}</p>
       </div>
       <div className="px-5 sm:px-10 mt-12 max-w-3xl mx-auto space-y-5 pb-16">
-        {(day.drafts ?? []).map((d, i) => {
+        {(day.drafts ?? []).map((d: any, i: any) => {
           const rot = Math.max(-2.5, Math.min(2.5, ((i * 73) % 11) / 4 - 1.4));
           return (
             <motion.div
@@ -192,7 +192,7 @@ function WhyYouLayout({ day }: { day: ApiDay }) {
           <p className="font-serif italic text-xl mt-6 max-w-md" style={{ color: "var(--mauve)" }}>{day.body}</p>
         </div>
         <ol className="col-span-12 sm:col-span-7 mt-6 sm:mt-0">
-          {(day.reasons ?? []).map((r, i) => (
+          {(day.reasons ?? []).map((r: any, i: any) => (
             <motion.li
               key={i}
               initial={{ opacity: 0, x: 16 }}
@@ -256,7 +256,7 @@ function GalleryLayout({ day }: { day: ApiDay }) {
         <PolaroidGallery items={items} />
       ) : (
         <div className="px-5 sm:px-10 mt-10 max-w-6xl mx-auto bento">
-          {items.map((g, i) => (
+          {items.map((g: any, i: any) => (
             <div key={i} className={`relative overflow-hidden span-${g.span}`}>
               <img src={g.url || galleryFallback(i)} alt={g.caption} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
               <div className="absolute inset-x-0 bottom-0 p-2 uppercase-mono"
@@ -301,7 +301,7 @@ function CandleMoment({ onBlow }: { onBlow: () => void }) {
       </button>
       {confetti && (
         <div className="confetti" aria-hidden>
-          {pieces.map((_, i) => {
+          {pieces.map((_: any, i: any) => {
             const angle = (i / pieces.length) * Math.PI * 2;
             const dist = 220 + ((i * 37) % 260);
             const bx = `${Math.cos(angle) * dist}px`;
@@ -347,7 +347,7 @@ function ReplyForm({ slug }: { slug: string }) {
   return (
     <form
       className="mx-auto max-w-xl mt-10 reply-card"
-      onSubmit={async (e) => {
+      onSubmit={async (e: any) => {
         e.preventDefault();
         if (!text.trim()) return;
         try {
@@ -368,7 +368,7 @@ function ReplyForm({ slug }: { slug: string }) {
         maxLength={400}
         placeholder="say one thing back…"
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e: any) => setText(e.target.value)}
       />
       <div className="mt-4 flex items-center justify-between">
         <span className="uppercase-mono opacity-50">{text.length}/400</span>
@@ -451,7 +451,7 @@ function ScratchLayout({ day }: { day: ApiDay }) {
       <div className="max-w-4xl mx-auto px-5 sm:px-10 py-12">
         <p className="font-serif text-xl mb-10 whitespace-pre-wrap">{day.body}</p>
         <div className="scratch-grid">
-          {(day.scratchCards ?? []).map((c, i) => (
+          {(day.scratchCards ?? []).map((c: any, i: any) => (
             <ScratchCard key={i} front={c.front} hidden={c.hidden} />
           ))}
         </div>
@@ -482,7 +482,7 @@ function TerminalLayout({ day }: { day: ApiDay }) {
     if (cmd === "date") response = new Date().toString();
     if (cmd === "clear") { setLines([]); setInput(""); return; }
 
-    setLines(prev => [...prev, `> ${input}`, response]);
+    setLines((prev: any) => [...prev, `> ${input}`, response]);
     setInput("");
   };
 
@@ -492,7 +492,7 @@ function TerminalLayout({ day }: { day: ApiDay }) {
       <div className="max-w-3xl mx-auto px-5 sm:px-10 py-12">
         <div className="terminal-window">
           <div className="space-y-1 mb-4 h-[300px] overflow-y-auto no-scrollbar font-mono text-sm sm:text-base">
-            {lines.map((l, i) => <div key={i}>{l}</div>)}
+            {lines.map((l: any, i: any) => <div key={i}>{l}</div>)}
             <div ref={endRef} />
           </div>
           <form onSubmit={handleCommand} className="flex items-center font-mono text-sm sm:text-base">

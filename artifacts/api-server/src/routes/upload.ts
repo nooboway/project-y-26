@@ -20,7 +20,7 @@ const router = express.Router();
 router.post(
   '/admin/upload',
   requireAdmin,
-  (req: any, res: any): void => {
+  (req: Request, res: Response): void => {
     // Process Upload
     (upload.single('file') as any)(req, res, (err: any) => {
       if (err) {

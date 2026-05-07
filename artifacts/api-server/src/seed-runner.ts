@@ -1,3 +1,4 @@
+import process from "node:process";
 import { ensureSeed } from "./lib/seed.js";
 import { logger } from "./lib/logger.js";
 

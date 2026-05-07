@@ -77,7 +77,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function SiteEditor({ onChanged }: { onChanged: () => void }) {
   const headers = adminHeaders();
   const { data, refetch } = useAdminGetSite({ request: { headers }, query: { queryKey: getAdminGetSiteQueryKey() } });
-  const update = useAdminUpdateSite();
+  const update = useAdminUpdateSite({ request: { headers } });
   const [form, setForm] = useState<any>(null);
   useEffect(() => { if (data) setForm({ ...(data as any) }); }, [data]);
   if (!form) return <Section title="site"><div className="opacity-60">loading…</div></Section>;
@@ -127,7 +127,8 @@ function SiteEditor({ onChanged }: { onChanged: () => void }) {
 }
 
 function LiveEditor({ onChanged }: { onChanged: () => void }) {
-  const update = useAdminUpdateLive();
+  const headers = adminHeaders();
+  const update = useAdminUpdateLive({ request: { headers } });
   const [text, setText] = useState("");
   return (
     <Section title="live · ticker message (cross-device, polled every 60s)">
@@ -167,7 +168,8 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
     slides: day.slides ?? [],
   };
   const [d, setD] = useState<ApiDay>(initial);
-  const update = useAdminUpdateDay();
+  const headers = adminHeaders();
+  const update = useAdminUpdateDay({ request: { headers } });
   useEffect(() => { setD(initial); }, [day.slug]); // eslint-disable-line
   const drafts: DraftItem[] = d.drafts ?? [];
   const reasons: string[] = d.reasons ?? [];
@@ -233,9 +235,9 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           </div>
         </div>
         <label><div className="uppercase-mono opacity-70 mb-1">eyebrow</div>
-          <input className="field" value={d.eyebrow} onChange={(e) => set({ eyebrow: e.target.value })} /></label>
+          <input className="field" value={d.eyebrow} onChange={(e: any) => set({ eyebrow: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">kind</div>
-          <select className="field" value={d.kind} onChange={(e) => set({ kind: e.target.value as unknown as DayKind })}>
+          <select className="field" value={d.kind} onChange={(e: any) => set({ kind: e.target.value as unknown as DayKind })}>
             <option value="letter">letter</option>
             <option value="magazine">magazine</option>
             <option value="drafts">drafts</option>
@@ -254,28 +256,28 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             label="Upload hero photo"
             token={getAdminToken() ?? ""}
             currentUrl={d.heroImage ?? ""}
-            onUploaded={(r) => set({ heroImage: r.url })}
+            onUploaded={(r: any) => set({ heroImage: r.url })}
           />
           <input
             className="field"
             type="text"
             placeholder="or paste URL directly"
             value={d.heroImage ?? ""}
-            onChange={(e) => set({ heroImage: e.target.value })}
+            onChange={(e: any) => set({ heroImage: e.target.value })}
           />
         </div>
         <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">body</div>
-          <textarea className="field" rows={8} value={d.body ?? ""} onChange={(e) => set({ body: e.target.value })} /></label>
+          <textarea className="field" rows={8} value={d.body ?? ""} onChange={(e: any) => set({ body: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">pull quote</div>
-          <input className="field" value={d.pullQuote ?? ""} onChange={(e) => set({ pullQuote: e.target.value })} /></label>
+          <input className="field" value={d.pullQuote ?? ""} onChange={(e: any) => set({ pullQuote: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">signoff</div>
-          <input className="field" value={d.signoff ?? ""} onChange={(e) => set({ signoff: e.target.value })} /></label>
+          <input className="field" value={d.signoff ?? ""} onChange={(e: any) => set({ signoff: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">song title</div>
-          <input className="field" value={d.songTitle ?? ""} onChange={(e) => set({ songTitle: e.target.value })} /></label>
+          <input className="field" value={d.songTitle ?? ""} onChange={(e: any) => set({ songTitle: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">song artist</div>
-          <input className="field" value={d.songArtist ?? ""} onChange={(e) => set({ songArtist: e.target.value })} /></label>
+          <input className="field" value={d.songArtist ?? ""} onChange={(e: any) => set({ songArtist: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">youtube id</div>
-          <input className="field" value={d.youtubeId ?? ""} onChange={(e) => set({ youtubeId: e.target.value })} /></label>
+          <input className="field" value={d.youtubeId ?? ""} onChange={(e: any) => set({ youtubeId: e.target.value })} /></label>
         <div className="sm:col-span-1">
           <div className="uppercase-mono opacity-70 mb-1">Voice Note (mp3/m4a/ogg)</div>
           <MediaUpload
@@ -283,14 +285,14 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             label="Upload audio (mp3, m4a, wav)"
             token={getAdminToken() ?? ""}
             currentUrl={d.voiceNoteUrl ?? ""}
-            onUploaded={(r) => set({ voiceNoteUrl: r.url })}
+            onUploaded={(r: any) => set({ voiceNoteUrl: r.url })}
           />
           <input
             className="field"
             type="text"
             placeholder="or paste URL directly"
             value={d.voiceNoteUrl ?? ""}
-            onChange={(e) => set({ voiceNoteUrl: e.target.value })}
+            onChange={(e: any) => set({ voiceNoteUrl: e.target.value })}
           />
         </div>
         <div className="sm:col-span-1">
@@ -300,30 +302,30 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             label="Upload audio file"
             token={getAdminToken() ?? ""}
             currentUrl={d.audioUrl ?? ""}
-            onUploaded={(r) => set({ audioUrl: r.url })}
+            onUploaded={(r: any) => set({ audioUrl: r.url })}
           />
           <input
             className="field"
             type="text"
             placeholder="or paste audio URL directly"
             value={d.audioUrl ?? ""}
-            onChange={(e) => set({ audioUrl: e.target.value })}
+            onChange={(e: any) => set({ audioUrl: e.target.value })}
           />
         </div>
         <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">preview text · whispered when locked</div>
-          <input className="field" value={d.previewText ?? ""} onChange={(e) => set({ previewText: e.target.value })} placeholder="a hint she'll see on the locked door…" /></label>
+          <input className="field" value={d.previewText ?? ""} onChange={(e: any) => set({ previewText: e.target.value })} placeholder="a hint she'll see on the locked door…" /></label>
         <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">signature svg · paste raw &lt;svg&gt;…&lt;/svg&gt; (used on letter / birthday)</div>
-          <textarea className="field" rows={4} value={d.signatureSvg ?? ""} onChange={(e) => set({ signatureSvg: e.target.value })} placeholder='<svg viewBox="0 0 200 60"><path d="M5 40 C 30 5, 80 65, 110 25 S 180 50, 195 30" /></svg>' /></label>
+          <textarea className="field" rows={4} value={d.signatureSvg ?? ""} onChange={(e: any) => set({ signatureSvg: e.target.value })} placeholder='<svg viewBox="0 0 200 60"><path d="M5 40 C 30 5, 80 65, 110 25 S 180 50, 195 30" /></svg>' /></label>
 
         <div className="sm:col-span-2">
           <div className="uppercase-mono opacity-70 mb-2">drafts (for kind=drafts)</div>
           {drafts.map((dr: DraftItem, i: number) => (
             <div key={i} className="flex items-start gap-2 mb-2">
               <input className="field flex-1" value={dr.text}
-                     onChange={(e) => set({ drafts: drafts.map((x, j) => j === i ? { ...x, text: e.target.value } : x) })} />
+                     onChange={(e: any) => set({ drafts: drafts.map((x, j) => j === i ? { ...x, text: e.target.value } : x) })} />
               <label className="uppercase-mono flex items-center gap-2 px-2 py-2">
                 <input type="checkbox" checked={dr.crossed}
-                       onChange={(e) => set({ drafts: drafts.map((x, j) => j === i ? { ...x, crossed: e.target.checked } : x) })} />
+                       onChange={(e: any) => set({ drafts: drafts.map((x, j) => j === i ? { ...x, crossed: e.target.checked } : x) })} />
                 crossed
               </label>
               <button type="button" className="btn-pill" onClick={() => set({ drafts: drafts.filter((_, j) => j !== i) })}>×</button>
@@ -337,7 +339,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           {reasons.map((r: string, i: number) => (
             <div key={i} className="flex items-start gap-2 mb-2">
               <input className="field flex-1" value={r}
-                     onChange={(e) => set({ reasons: reasons.map((x, j) => j === i ? e.target.value : x) })} />
+                     onChange={(e: any) => set({ reasons: reasons.map((x, j) => j === i ? e.target.value : x) })} />
               <button type="button" className="btn-pill" onClick={() => set({ reasons: reasons.filter((_, j) => j !== i) })}>×</button>
             </div>
           ))}
@@ -354,21 +356,21 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
                   label={`Gallery photo ${i + 1}`}
                   token={getAdminToken() ?? ""}
                   currentUrl={g.url}
-                  onUploaded={(r) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: r.url } : x) })}
+                  onUploaded={(r: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: r.url } : x) })}
                 />
                 <input
                   className="field"
                   placeholder="or paste photo URL"
                   value={g.url}
-                  onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: e.target.value } : x) })}
+                  onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: e.target.value } : x) })}
                 />
               </div>
               <div className="flex flex-col gap-2">
                 <input className="field" placeholder="caption" value={g.caption}
-                       onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, caption: e.target.value } : x) })} />
+                       onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, caption: e.target.value } : x) })} />
                 <div className="flex gap-2">
                   <select className="field" value={g.span}
-                          onChange={(e) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, span: e.target.value as unknown as GalleryImageSpan } : x) })}>
+                          onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, span: e.target.value as unknown as GalleryImageSpan } : x) })}>
                     <option value="s">s</option><option value="m">m</option><option value="l">l</option><option value="xl">xl</option>
                   </select>
                   <button type="button" className="btn-pill" onClick={() => set({ gallery: gallery.filter((_, j) => j !== i) })}>×</button>
@@ -384,10 +386,10 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           {scratchCards.map((c: any, i: number) => (
             <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 p-2 border hairline">
               <input className="field" placeholder="Front text" value={c.front}
-                     onChange={(e) => set({ scratchCards: scratchCards.map((x, j) => j === i ? { ...x, front: e.target.value } : x) })} />
+                     onChange={(e: any) => set({ scratchCards: scratchCards.map((x, j) => j === i ? { ...x, front: e.target.value } : x) })} />
               <div className="flex gap-2">
                 <input className="field flex-1" placeholder="Hidden text" value={c.hidden}
-                       onChange={(e) => set({ scratchCards: scratchCards.map((x, j) => j === i ? { ...x, hidden: e.target.value } : x) })} />
+                       onChange={(e: any) => set({ scratchCards: scratchCards.map((x, j) => j === i ? { ...x, hidden: e.target.value } : x) })} />
                 <button type="button" className="btn-pill" onClick={() => set({ scratchCards: scratchCards.filter((_, j) => j !== i) })}>×</button>
               </div>
             </div>
@@ -399,11 +401,11 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           <div className="uppercase-mono opacity-70 mb-2">slides (for kind=slideshow)</div>
           {slides.map((s: any, i: number) => (
             <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2 p-2 border hairline">
-              <input className="field" placeholder="Body text (large)" value={s.body}
-                     onChange={(e) => set({ slides: slides.map((x, j) => j === i ? { ...x, body: e.target.value } : x) })} />
+               <input className="field" placeholder="Body text (large)" value={s.body}
+                     onChange={(e: any) => set({ slides: slides.map((x, j) => j === i ? { ...x, body: e.target.value } : x) })} />
               <div className="flex gap-2">
                 <input className="field flex-1" placeholder="Subtext (small)" value={s.sub}
-                       onChange={(e) => set({ slides: slides.map((x, j) => j === i ? { ...x, sub: e.target.value } : x) })} />
+                       onChange={(e: any) => set({ slides: slides.map((x, j) => j === i ? { ...x, sub: e.target.value } : x) })} />
                 <button type="button" className="btn-pill" onClick={() => set({ slides: slides.filter((_, j) => j !== i) })}>×</button>
               </div>
             </div>
@@ -429,8 +431,8 @@ function SeenPanel() {
     query: { queryKey: getAdminListSeenQueryKey(), refetchInterval: 30_000 },
   });
   const items = seen.data ?? [];
-  const opened = items.filter((i) => i.openedAt);
-  const replied = items.filter((i) => i.replyText);
+  const opened = items.filter((i: any) => i.openedAt);
+  const replied = items.filter((i: any) => i.replyText);
   return (
     <Section title="opens · replies (cross-device, polled every 30s)">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -446,13 +448,13 @@ function SeenPanel() {
           <div className="uppercase-mono opacity-60">last seen</div>
           <div className="font-serif italic text-xl mt-1">
             {opened.length
-              ? new Date(opened.map((i) => i.openedAt!).sort().reverse()[0]).toLocaleString()
+              ? new Date(opened.map((i: any) => i.openedAt!).sort().reverse()[0]).toLocaleString()
               : "—"}
           </div>
         </div>
       </div>
       <div className="space-y-3">
-        {items.map((it) => (
+        {items.map((it: any) => (
           <div key={it.slug} className="grid grid-cols-1 sm:grid-cols-[140px_1fr_180px] gap-3 items-start py-3 border-t hairline">
             <div>
               <div className="uppercase-mono opacity-70">{it.slug}</div>
@@ -491,7 +493,7 @@ export default function Admin() {
     qc.refetchQueries({ queryKey: getListDaysQueryKey() });
     qc.refetchQueries({ queryKey: getAdminGetSiteQueryKey() });
     qc.refetchQueries({ queryKey: getAdminListDaysQueryKey() });
-    days.data?.forEach((d) => qc.refetchQueries({ queryKey: getGetDayQueryKey(d.slug) }));
+    days.data?.forEach((d: any) => qc.refetchQueries({ queryKey: getGetDayQueryKey(d.slug) }));
   };
 
   // If token is invalid (e.g. server restarted secret), drop it.
@@ -527,7 +529,7 @@ export default function Admin() {
         <SeenPanel />
 
         <Section title="days">
-          {days.data?.map((d) => <DayEditor key={d.slug} day={d} onChanged={invalidateAll} />)}
+          {days.data?.map((d: any) => <DayEditor key={d.slug} day={d} onChanged={invalidateAll} />)}
         </Section>
       </div>
     </div>
