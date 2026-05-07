@@ -13,59 +13,14 @@ const upload = multer({
   limits: { fileSize: 100 * 1024 * 1024 }, // 100MB — covers video
 });
 
-// requireAdmin is duplicated here to avoid circular imports.
-// If the project has a shared auth middleware, use that instead.
-import crypto from 'node:crypto';
-const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET ?? 'for-yin-secret-please-rotate';
-
-function verifyToken(token: string | undefined): boolean {
-  if (!token) return false;
-  const parts = token.split('.');
-  if (parts.length !== 3) return false;
-  const [ts, nonce, sig] = parts;
-  const expect = crypto
-    .createHmac('sha256', TOKEN_SECRET)
-    .update(`${ts}.${nonce}`)
-    .digest('hex');
-  return sig === expect;
-}
+import { requireAdmin } from "../middlewares/requireAdmin.js";
 
 const router = express.Router();
 
 router.post(
   '/admin/upload',
+  requireAdmin,
   (req: any, res: any): void => {
-    // HMAC Verification
-    const token = req.headers['x-admin-token'];
-
-    if (!token) {
-      res.status(401).json({ error: 'Unauthorized' });
-      return;
-    }
-
-    const [receivedHmac, timestamp] = String(token).split('.');
-    if (!receivedHmac || !timestamp) {
-      res.status(401).json({ error: 'Invalid token format' });
-      return;
-    }
-
-    const expectedHmac = crypto
-      .createHmac('sha256', TOKEN_SECRET)
-      .update(timestamp)
-      .digest('hex');
-
-    if (receivedHmac !== expectedHmac) {
-      res.status(401).json({ error: 'Invalid token' });
-      return;
-    }
-
-    const now = Math.floor(Date.now() / 1000);
-    const tokenTime = parseInt(timestamp, 10);
-    if (now - tokenTime > 60 * 60 * 24) {
-      res.status(401).json({ error: 'Token expired' });
-      return;
-    }
-
     // Process Upload
     (upload.single('file') as any)(req, res, (err: any) => {
       if (err) {

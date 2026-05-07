@@ -16,36 +16,11 @@ import {
   AdminListSeenResponse,
 } from "@workspace/api-zod";
 import { loadSite, dayUnlockDateIso } from "../lib/lock.js";
+import { makeToken, requireAdmin } from "../middlewares/requireAdmin.js";
 
 const router = express.Router();
 
 const ADMIN_PASSPHRASE = process.env.ADMIN_PASSPHRASE ?? "love-yin-2026";
-const TOKEN_SECRET = process.env.ADMIN_TOKEN_SECRET ?? "for-yin-secret-please-rotate";
-
-function makeToken(): string {
-  const payload = `${Date.now()}.${crypto.randomBytes(16).toString("hex")}`;
-  const sig = crypto.createHmac("sha256", TOKEN_SECRET).update(payload).digest("hex");
-  return `${payload}.${sig}`;
-}
-
-function verifyToken(token: string | undefined): boolean {
-  if (!token) return false;
-  const parts = token.split(".");
-  if (parts.length !== 3) return false;
-  const [ts, nonce, sig] = parts;
-  const expect = crypto.createHmac("sha256", TOKEN_SECRET).update(`${ts}.${nonce}`).digest("hex");
-  if (sig.length !== expect.length) return false;
-  return crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expect));
-}
-
-function requireAdmin(req: any, res: any, next: any): void {
-  const tokenRaw = req.header("x-admin-token");
-  if (!verifyToken(tokenRaw)) {
-    res.status(401).json({ error: "Unauthorized" });
-    return;
-  }
-  next();
-}
 
 router.post("/admin/login", async (req: any, res: any): Promise<void> => {
   const parsed = AdminLoginBody.safeParse(req.body);
