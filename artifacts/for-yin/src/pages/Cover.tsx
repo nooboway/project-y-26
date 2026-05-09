@@ -77,7 +77,7 @@ export default function Cover() {
             className="font-display leading-[0.85] mt-3"
           />
           <div
-            className="font-display leading-[0.82] -mt-2"
+            className="font-display leading-[0.82] mt-2"
             style={{ fontSize: "clamp(64px, 16vw, 220px)" }}
           >
             <span style={{ color: "var(--ink)" }}>{heroCopy.lineOne || SITE_COPY_TEMPLATE.hero.lineOne}</span>
