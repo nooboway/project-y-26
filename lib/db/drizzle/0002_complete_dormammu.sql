@@ -1,0 +1,1 @@
+ALTER TABLE "days" ADD COLUMN "unlock_time" text DEFAULT '00:00' NOT NULL;

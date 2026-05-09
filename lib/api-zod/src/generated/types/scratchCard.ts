@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface AdminToken {
-  token: string;
+export interface ScratchCard {
+  front: string;
+  hidden: string;
 }

@@ -1,5 +1,30 @@
 import { pgTable, text, integer, timestamp, jsonb } from "drizzle-orm/pg-core";
 
+export type SiteCopy = {
+  hero?:      { lineOne?: string; lineTwo?: string; lineThree?: string; subtitle?: string; image?: string };
+  labels?:    { preBirthday?: string; birthday?: string; aftermath?: string };
+  buttons?:   { preBirthday?: string; birthday?: string; aftermath?: string };
+  countdown?: { style?: "numbers" | "flip" | "vinyl" | "letterpress"; label?: string; sub?: string; whenZero?: string };
+  ticker?:    { accent?: string; bottom?: string; suffix?: string };
+  footer?:    { tagline?: string };
+  cover?:     { issuesHeading?: string; photoCaption?: string };
+};
+
+export type DayCopy = {
+  letter?:    { intro?: string; signedAs?: string };
+  song?:      { prompt?: string; cta?: string };
+  voiceNote?: { prompt?: string };
+  gallery?:   { prompt?: string };
+  birthday?:  {
+    subhead?: string; envelopeCta?: string; candleHint?: string;
+    candleDoneCta?: string; candleDoneHint?: string;
+  };
+  reply?:     { prompt?: string; placeholder?: string; sentTitle?: string; sentBody?: string };
+  drafts?:    { heading?: string };
+  whyYou?:   { heading?: string; subhead?: string };
+  terminal?:  { boot?: string[]; commands?: { name: string; response: string }[] };
+};
+
 export const siteConfigTable = pgTable("site_config", {
   id: integer("id").primaryKey().default(1),
   title: text("title").notNull(),
@@ -13,6 +38,7 @@ export const siteConfigTable = pgTable("site_config", {
   unlockOverride: integer("unlock_override").notNull().default(0),
   liveText: text("live_text").notNull().default(""),
   liveUpdatedAt: timestamp("live_updated_at").notNull().defaultNow(),
+  copy: jsonb("copy").$type<SiteCopy>().notNull().default({}),
 });
 
 export const daysTable = pgTable("days", {
@@ -35,10 +61,12 @@ export const daysTable = pgTable("days", {
   scratchCards: text("scratch_cards").notNull().default("[]"),
   slides: text("slides").notNull().default("[]"),
   audioUrl: text("audio_url").notNull().default(""),
+  unlockTime: text("unlock_time").notNull().default("00:00"),
   signatureSvg: text("signature_svg").notNull().default(""),
   voiceNoteUrl: text("voice_note_url").notNull().default(""),
   previewText: text("preview_text").notNull().default(""),
   replyText: text("reply_text").notNull().default(""),
   replyAt: timestamp("reply_at"),
   openedAt: timestamp("opened_at"),
+  copy: jsonb("copy").$type<DayCopy>().notNull().default({}),
 });

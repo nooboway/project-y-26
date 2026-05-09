@@ -47,6 +47,7 @@ router.get("/admin/site", requireAdmin, async (_req: Request, res: Response): Pr
     coordinates: s.coordinates,
     coordinatesPlace: s.coordinatesPlace,
     unlockOverride: s.unlockOverride,
+    copy: s.copy,
   }));
 });
 
@@ -71,6 +72,7 @@ router.put("/admin/site", requireAdmin, async (req: Request, res: Response): Pro
     coordinates: updated.coordinates,
     coordinatesPlace: updated.coordinatesPlace,
     unlockOverride: updated.unlockOverride,
+    copy: updated.copy,
   }));
 });
 
@@ -120,6 +122,7 @@ router.get("/admin/days", requireAdmin, async (_req: Request, res: Response): Pr
     scratchCards: JSON.parse(d.scratchCards || "[]"),
     slides: JSON.parse(d.slides || "[]"),
     audioUrl: d.audioUrl ?? "",
+    copy: d.copy,
   }))));
 });
 
@@ -185,6 +188,7 @@ router.put("/admin/days/:slug", requireAdmin, async (req: Request, res: Response
     scratchCards: JSON.parse(updated.scratchCards || "[]"),
     slides: JSON.parse(updated.slides || "[]"),
     audioUrl: updated.audioUrl ?? "",
+    copy: updated.copy,
   }));
 });
 

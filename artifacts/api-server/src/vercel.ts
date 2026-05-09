@@ -1,7 +1,14 @@
 // Vercel serverless entry — exports the Express app without calling listen()
-import app from "./app.js";
+import app, { setStartupGate } from "./app.js";
+import { ensureMigrate } from "./lib/migrate.js";
 import { ensureSeed } from "./lib/seed.js";
 
-ensureSeed().catch(() => {});
+const ready = ensureMigrate()
+  .then(() => ensureSeed())
+  .catch((err) => {
+    console.error("[startup] migrate/seed failed:", err);
+  });
+
+setStartupGate(ready);
 
 export default app;

@@ -8,7 +8,13 @@ import {
   SendDayReplyBody,
   SendDayReplyResponse,
 } from "@workspace/api-zod";
-import { loadSite, loadDays, computeDayIndex, dayUnlockDateIso } from "../lib/lock.js";
+import {
+  loadSite,
+  loadDays,
+  computeDayIndex,
+  dayUnlockDateIso,
+  dayUnlockDatetimeMs,
+} from "../lib/lock.js";
 
 const router = express.Router();
 
@@ -16,21 +22,30 @@ router.get("/days", async (_req: Request, res: Response): Promise<void> => {
   const site = await loadSite();
   const days = await loadDays();
   const now = new Date();
-  const { currentDayIndex, isAftermath } = computeDayIndex(
+  const nowMs = now.getTime();
+  const { isAftermath, currentDayIndex } = computeDayIndex(
     site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
   );
+
   const summaries = days.map((d) => {
-    const unlocked = isAftermath || d.index <= currentDayIndex;
+    const unlockTime = (d as any).unlockTime ?? "00:00";
+    const unlocked = isAftermath || nowMs >= dayUnlockDatetimeMs(site.startDate, d.index, unlockTime);
+
+    // "Tomorrow" — the next card to unlock. Show its igboTitle as a teaser
+    // so she anticipates what's coming, but nothing else leaks.
+    const isNext = !unlocked && d.index === currentDayIndex + 1;
+
     return {
       slug: d.slug,
       index: d.index,
-      igboTitle: d.igboTitle,
+      // Only reveal the Igbo title when unlocked, or as a one-card teaser
+      igboTitle: (unlocked || isNext) ? d.igboTitle : "",
       title: unlocked ? d.title : "Locked",
-      eyebrow: unlocked ? d.eyebrow : "Comes alive soon",
+      eyebrow: unlocked ? d.eyebrow : "",
       kind: d.kind as any,
       unlocked,
-      isToday: d.index === currentDayIndex,
-      unlockDate: dayUnlockDateIso(site.startDate, d.index),
+      isToday: unlocked && d.index === currentDayIndex,
+      unlockDate: dayUnlockDateIso(site.startDate, d.index, unlockTime),
       youtubeId: unlocked ? d.youtubeId : "",
       previewText: d.previewText,
     };
@@ -48,7 +63,8 @@ router.get("/days/:slug", async (req: Request, res: Response): Promise<void> => 
   const site = await loadSite();
   const days = await loadDays();
   const now = new Date();
-  const { currentDayIndex, isAftermath } = computeDayIndex(
+  const nowMs = now.getTime();
+  const { isAftermath } = computeDayIndex(
     site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
   );
   const [day] = await db.select().from(daysTable).where(eq(daysTable.slug, slug));
@@ -56,13 +72,13 @@ router.get("/days/:slug", async (req: Request, res: Response): Promise<void> => 
     res.status(404).json({ error: "Day not found" });
     return;
   }
-  const unlocked = isAftermath || day.index <= currentDayIndex;
+  const unlockTime = (day as any).unlockTime ?? "00:00";
+  const unlocked = isAftermath || nowMs >= dayUnlockDatetimeMs(site.startDate, day.index, unlockTime);
   if (!unlocked) {
-    const unlockDate = dayUnlockDateIso(site.startDate, day.index);
     res.status(423).json({
       slug: day.slug,
       index: day.index,
-      unlockDate,
+      unlockDate: dayUnlockDateIso(site.startDate, day.index, unlockTime),
       message: "This day comes alive on its own time. Come back soon.",
       previewText: day.previewText,
     });
@@ -75,7 +91,7 @@ router.get("/days/:slug", async (req: Request, res: Response): Promise<void> => 
     title: day.title,
     eyebrow: day.eyebrow,
     kind: day.kind as any,
-    unlockDate: dayUnlockDateIso(site.startDate, day.index),
+    unlockDate: dayUnlockDateIso(site.startDate, day.index, unlockTime),
     heroImage: day.heroImage,
     body: day.body,
     pullQuote: day.pullQuote,
@@ -103,10 +119,13 @@ router.post("/days/:slug/seen", async (req: Request, res: Response): Promise<voi
   if (!existing) { res.status(404).json({ error: "Day not found" }); return; }
   const site = await loadSite();
   const days = await loadDays();
-  const { currentDayIndex, isAftermath } = computeDayIndex(
-    site.startDate, site.birthdayDate, site.unlockOverride, days.length, new Date(),
+  const now = new Date();
+  const nowMs = now.getTime();
+  const { isAftermath } = computeDayIndex(
+    site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
   );
-  const unlocked = isAftermath || existing.index <= currentDayIndex;
+  const unlockTime = (existing as any).unlockTime ?? "00:00";
+  const unlocked = isAftermath || nowMs >= dayUnlockDatetimeMs(site.startDate, existing.index, unlockTime);
   if (!unlocked) { res.status(423).json({ error: "Locked" }); return; }
   const firstOpen = !existing.openedAt;
   if (firstOpen) {
@@ -127,6 +146,14 @@ router.post("/days/:slug/reply", async (req: Request, res: Response): Promise<vo
   await db.update(daysTable)
     .set({ replyText: text, replyAt: sql`now()` })
     .where(eq(daysTable.slug, slug));
+  const hook = process.env.REPLY_WEBHOOK_URL;
+  if (hook) {
+    fetch(hook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: `💌 reply on **${slug}**\n> ${text}` }),
+    }).catch(() => {});
+  }
   res.json(SendDayReplyResponse.parse({ ok: true }));
 });
 

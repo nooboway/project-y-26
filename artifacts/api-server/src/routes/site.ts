@@ -30,6 +30,7 @@ router.get("/site", async (_req: any, res: any): Promise<void> => {
     isBirthday,
     isAftermath,
     secondsUntilBirthday,
+    copy: site.copy,
   };
   res.json(GetSiteResponse.parse(data));
 });

@@ -8,6 +8,13 @@
       "when": 1777938109723,
       "tag": "0000_chunky_sheva_callister",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1778212949740,
+      "tag": "0001_sharp_king_bedlam",
+      "breakpoints": true
     }
   ]
 }

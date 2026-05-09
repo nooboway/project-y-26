@@ -1,5 +1,4 @@
 import { db, siteConfigTable, daysTable } from "@workspace/db";
-import { sql } from "@workspace/db";
 import { logger } from "./logger.js";
 
 const DAYS_SEED = [
@@ -128,13 +127,8 @@ export async function ensureSeed(): Promise<void> {
     logger.info("Seeded site_config");
   }
 
-  // To allow re-seeding with new structure, we check if Day 1 is still kind 'letter'
-  const [day1] = await db.select().from(daysTable).where(sql`slug = 'day-1'`);
-  
-  if (!day1 || day1.kind === 'letter') {
-    // Clear existing if it's the old structure
-    await db.delete(daysTable);
-    
+  const existingDays = await db.select().from(daysTable);
+  if (existingDays.length === 0) {
     for (const d of DAYS_SEED) {
       await db.insert(daysTable).values({
         slug: d.slug,
@@ -166,6 +160,4 @@ export async function ensureSeed(): Promise<void> {
     }
     logger.info({ count: DAYS_SEED.length }, "Seeded days v3.0");
   }
-
-  void sql;
 }

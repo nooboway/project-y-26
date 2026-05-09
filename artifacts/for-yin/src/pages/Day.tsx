@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useRef } from "react";
+import DOMPurify from "isomorphic-dompurify";
 import { Link, useLocation, useRoute } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -14,6 +15,12 @@ import { useAudio } from "@/lib/audio";
 import { heroForDay, galleryFallback, IMG } from "@/lib/assets";
 import { pingSeenOnce } from "@/lib/seen";
 import { usePageMeta } from "@/lib/meta";
+import { LETTER_COPY_TEMPLATE, BIRTHDAY_COPY_TEMPLATE, REPLY_COPY_TEMPLATE } from "@/lib/copyDefaults";
+
+// Helper: get a copy section from day.copy with sensible fallbacks.
+function dayCopy<K extends string>(day: any, key: K): any {
+  return (day?.copy?.[key] ?? {}) as any;
+}
 
 function BackBar({ index, kind }: { index: number; kind: string }) {
   return (
@@ -27,7 +34,7 @@ function BackBar({ index, kind }: { index: number; kind: string }) {
 function HeroBlock({ day, dark }: { day: ApiDay; dark?: boolean }) {
   const src = heroForDay(day.slug, day.heroImage || undefined);
   return (
-    <div className="px-5 sm:px-10 mt-6">
+    <motion.div layoutId={`day-card-${day.slug}`} className="px-5 sm:px-10 mt-6">
       <div className="relative aspect-[16/8] overflow-hidden">
         <img src={src} alt="" loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover" />
         <div className="absolute inset-0" style={{ background: dark ? "linear-gradient(180deg, rgba(12,10,10,.2), rgba(12,10,10,.8))" : "linear-gradient(180deg, transparent, rgba(12,10,10,.45))" }} />
@@ -39,33 +46,93 @@ function HeroBlock({ day, dark }: { day: ApiDay; dark?: boolean }) {
           />
         </div>
       </div>
-    </div>
+    </motion.div>
   );
+}
+
+type AudioSource =
+  | { type: "youtube"; id: string }
+  | { type: "soundcloud"; url: string }
+  | { type: "direct"; url: string }
+  | { type: "none" };
+
+function resolveAudio(day: ApiDay): AudioSource {
+  // Extract YouTube ID from either field — bare ID or full URL
+  function ytId(s?: string | null): string {
+    if (!s?.trim()) return "";
+    const m = s.trim().match(
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+    );
+    if (m) return m[1];
+    if (/^[A-Za-z0-9_-]{11}$/.test(s.trim())) return s.trim();
+    return "";
+  }
+
+  const id = ytId(day.youtubeId) || ytId(day.audioUrl);
+  if (id) return { type: "youtube", id };
+
+  const raw = day.audioUrl?.trim();
+  if (!raw) return { type: "none" };
+  if (raw.includes("soundcloud.com")) return { type: "soundcloud", url: raw };
+  if (raw.includes("dropbox.com")) return {
+    type: "direct",
+    url: raw.replace("www.dropbox.com", "dl.dropboxusercontent.com").replace(/[?&]dl=[01]/g, ""),
+  };
+  if (raw.startsWith("http")) return { type: "direct", url: raw };
+  return { type: "none" };
 }
 
 function SongBlock({ day }: { day: ApiDay }) {
   const audio = useAudio();
-  if (!day.songTitle && !day.youtubeId) return null;
+  const source = resolveAudio(day);
+  if (!day.songTitle && source.type === "none") return null;
   return (
-    <div className="mx-5 sm:mx-10 mt-10 p-5 sm:p-7 border hairline flex items-center justify-between gap-4 flex-wrap"
-         style={{ background: "rgba(12,10,10,0.04)" }}>
-      <div>
-        <div className="uppercase-mono opacity-60">play this while you read</div>
-        <div className="font-serif italic text-2xl mt-1">{day.songTitle}</div>
-        <div className="uppercase-mono mt-1 opacity-70">{day.songArtist}</div>
+    <div
+      className="mx-5 sm:mx-10 mt-10 p-5 sm:p-7 border hairline flex flex-col gap-4"
+      style={{ background: "rgba(12,10,10,0.04)" }}
+    >
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <div className="uppercase-mono opacity-60">play this while you read</div>
+          <div className="font-serif italic text-2xl mt-1">{day.songTitle}</div>
+          <div className="uppercase-mono mt-1 opacity-70">{day.songArtist}</div>
+        </div>
+        {source.type === "youtube" && (
+          <button className="btn-solid" onClick={() => audio.play(source.id)}>
+            play side a
+          </button>
+        )}
       </div>
-      {day.youtubeId && (
-        <button className="btn-solid" onClick={() => audio.play(day.youtubeId!)}>play side a</button>
+      {source.type === "soundcloud" && (
+        <iframe
+          title="soundcloud"
+          width="100%"
+          height="80"
+          scrolling="no"
+          frameBorder="no"
+          allow="autoplay"
+          src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(source.url)}&color=%23c47a6a&auto_play=false&hide_related=true&show_comments=false&show_user=false`}
+          style={{ borderRadius: 4 }}
+        />
+      )}
+      {source.type === "direct" && (
+        <audio
+          controls
+          preload="none"
+          src={source.url}
+          className="w-full"
+          style={{ borderRadius: 4, accentColor: "var(--rose,#c47a6a)" }}
+        />
       )}
     </div>
   );
 }
 
-function VoiceNoteBlock({ url }: { url?: string | null }) {
+function VoiceNoteBlock({ url, copy }: { url?: string | null; copy?: { prompt?: string } }) {
   if (!url) return null;
   return (
     <div className="mx-5 sm:mx-10 mt-6">
-      <div className="uppercase-mono opacity-60 mb-2">a one-take voice note · play me</div>
+      <div className="uppercase-mono opacity-60 mb-2">{copy?.prompt || "a one-take voice note · play me"}</div>
       <div className="voice">
         <audio controls preload="none" src={url} className="w-full" />
       </div>
@@ -73,24 +140,26 @@ function VoiceNoteBlock({ url }: { url?: string | null }) {
   );
 }
 
-function SignatureBlock({ svg }: { svg?: string | null }) {
+function SignatureBlock({ svg, signedAs }: { svg?: string | null; signedAs?: string }) {
   if (!svg) return null;
+  const clean = DOMPurify.sanitize(svg, { USE_PROFILES: { svg: true, svgFilters: true } });
   return (
     <div className="mt-10 sig-svg">
-      <div className="uppercase-mono opacity-60 mb-2">— signed,</div>
-      <div dangerouslySetInnerHTML={{ __html: svg }} />
+      <div className="uppercase-mono opacity-60 mb-2">{signedAs || LETTER_COPY_TEMPLATE.signedAs}</div>
+      <div dangerouslySetInnerHTML={{ __html: clean }} />
     </div>
   );
 }
 
 function LetterLayout({ day }: { day: ApiDay }) {
+  const letter = { ...LETTER_COPY_TEMPLATE, ...dayCopy(day, "letter") };
   return (
     <PageFrame>
       <BackBar index={day.index} kind={day.kind} />
       <HeroBlock day={day} />
       <article className="max-w-3xl mx-auto px-5 sm:px-10 py-12">
         <div className="font-serif italic text-lg" style={{ color: "var(--mauve)" }}>
-          a letter, slowly.
+          {letter.intro}
         </div>
         <div className="font-serif text-xl sm:text-2xl leading-[1.5] mt-6 drop-cap whitespace-pre-wrap">
           {day.body}
@@ -102,9 +171,9 @@ function LetterLayout({ day }: { day: ApiDay }) {
           </blockquote>
         )}
         <div className="mt-12 font-serif italic text-xl">{day.signoff}</div>
-        <SignatureBlock svg={day.signatureSvg} />
+        <SignatureBlock svg={day.signatureSvg} signedAs={letter.signedAs} />
       </article>
-      <VoiceNoteBlock url={day.voiceNoteUrl} />
+      <VoiceNoteBlock url={day.voiceNoteUrl} copy={dayCopy(day, "voiceNote")} />
       <SongBlock day={day} />
       <Ticker />
     </PageFrame>
@@ -112,6 +181,7 @@ function LetterLayout({ day }: { day: ApiDay }) {
 }
 
 function MagazineLayout({ day }: { day: ApiDay }) {
+  const vn = dayCopy(day, "voiceNote");
   return (
     <PageFrame dark>
       <div style={{ color: "var(--cream)" }}>
@@ -138,7 +208,7 @@ function MagazineLayout({ day }: { day: ApiDay }) {
           {day.body}
           <div className="mt-10 italic" style={{ color: "var(--rose-dust)" }}>{day.signoff}</div>
         </article>
-        <VoiceNoteBlock url={day.voiceNoteUrl} />
+        <VoiceNoteBlock url={day.voiceNoteUrl} copy={vn} />
       </div>
       <SongBlock day={day} />
     </PageFrame>
@@ -146,12 +216,13 @@ function MagazineLayout({ day }: { day: ApiDay }) {
 }
 
 function DraftsLayout({ day }: { day: ApiDay }) {
+  const drafts = dayCopy(day, "drafts");
   return (
     <PageFrame>
       <BackBar index={day.index} kind={day.kind} />
       <div className="px-5 sm:px-10 mt-8 max-w-3xl mx-auto">
         <div className="uppercase-mono opacity-60">{day.eyebrow}</div>
-        <SplitHeading text="DRAFTS I NEVER SENT" className="font-display leading-[0.9] mt-3 text-6xl sm:text-8xl" />
+        <SplitHeading text={drafts.heading || "DRAFTS I NEVER SENT"} className="font-display leading-[0.9] mt-3 text-6xl sm:text-8xl" />
         <p className="font-serif italic text-xl mt-4 max-w-xl" style={{ color: "var(--mauve)" }}>{day.body}</p>
       </div>
       <div className="px-5 sm:px-10 mt-12 max-w-3xl mx-auto space-y-5 pb-16">
@@ -173,13 +244,14 @@ function DraftsLayout({ day }: { day: ApiDay }) {
         })}
         <div className="font-serif italic text-xl mt-10">{day.signoff}</div>
       </div>
-      <VoiceNoteBlock url={day.voiceNoteUrl} />
+      <VoiceNoteBlock url={day.voiceNoteUrl} copy={dayCopy(day, "voiceNote")} />
       <SongBlock day={day} />
     </PageFrame>
   );
 }
 
 function WhyYouLayout({ day }: { day: ApiDay }) {
+  const wy = dayCopy(day, "whyYou");
   return (
     <PageFrame>
       <div className="filmstrip h-2 w-full" />
@@ -187,8 +259,8 @@ function WhyYouLayout({ day }: { day: ApiDay }) {
       <div className="px-5 sm:px-10 mt-8 grid grid-cols-12 gap-4">
         <div className="col-span-12 sm:col-span-5">
           <div className="uppercase-mono opacity-60">{day.eyebrow}</div>
-          <SplitHeading text="WHY YOU." className="font-display leading-[0.85] mt-3" />
-          <div className="font-display text-7xl sm:text-9xl outline-text leading-none -mt-2">FIELD NOTES</div>
+          <SplitHeading text={wy.heading || "WHY YOU."} className="font-display leading-[0.85] mt-3" />
+          <div className="font-display text-7xl sm:text-9xl outline-text leading-none -mt-2">{wy.subhead || "FIELD NOTES"}</div>
           <p className="font-serif italic text-xl mt-6 max-w-md" style={{ color: "var(--mauve)" }}>{day.body}</p>
         </div>
         <ol className="col-span-12 sm:col-span-7 mt-6 sm:mt-0">
@@ -209,16 +281,16 @@ function WhyYouLayout({ day }: { day: ApiDay }) {
         </ol>
       </div>
       <div className="px-5 sm:px-10 mt-10 mb-16 font-serif italic text-xl">{day.signoff}</div>
-      <VoiceNoteBlock url={day.voiceNoteUrl} />
+      <VoiceNoteBlock url={day.voiceNoteUrl} copy={dayCopy(day, "voiceNote")} />
       <SongBlock day={day} />
     </PageFrame>
   );
 }
 
-function PolaroidGallery({ items }: { items: { url: string; caption: string }[] }) {
+function PolaroidGallery({ items, prompt }: { items: { url: string; caption: string }[]; prompt?: string }) {
   return (
     <div className="px-5 sm:px-10 mt-10 max-w-5xl mx-auto">
-      <div className="uppercase-mono opacity-60 mb-6 text-center">a small stack of frames · pick one up</div>
+      <div className="uppercase-mono opacity-60 mb-6 text-center">{prompt || "a small stack of frames · pick one up"}</div>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-10">
         {items.map((g, i) => {
           const rot = ((i * 53) % 9) - 4; // -4..+4
@@ -244,6 +316,7 @@ function PolaroidGallery({ items }: { items: { url: string; caption: string }[] 
 function GalleryLayout({ day }: { day: ApiDay }) {
   const items = day.gallery ?? [];
   const usePolaroid = items.length > 0 && items.length <= 9;
+  const galleryCopy = dayCopy(day, "gallery");
   return (
     <PageFrame>
       <BackBar index={day.index} kind={day.kind} />
@@ -253,7 +326,7 @@ function GalleryLayout({ day }: { day: ApiDay }) {
         <p className="font-serif italic text-xl mt-4 max-w-xl" style={{ color: "var(--mauve)" }}>{day.body}</p>
       </div>
       {usePolaroid ? (
-        <PolaroidGallery items={items} />
+        <PolaroidGallery items={items} prompt={galleryCopy.prompt} />
       ) : (
         <div className="px-5 sm:px-10 mt-10 max-w-6xl mx-auto bento">
           {items.map((g: any, i: any) => (
@@ -268,13 +341,13 @@ function GalleryLayout({ day }: { day: ApiDay }) {
         </div>
       )}
       <div className="px-5 sm:px-10 mt-12 mb-16 font-serif italic text-xl text-center">{day.signoff}</div>
-      <VoiceNoteBlock url={day.voiceNoteUrl} />
+      <VoiceNoteBlock url={day.voiceNoteUrl} copy={dayCopy(day, "voiceNote")} />
       <SongBlock day={day} />
     </PageFrame>
   );
 }
 
-function CandleMoment({ onBlow }: { onBlow: () => void }) {
+function CandleMoment({ onBlow, copy }: { onBlow: () => void; copy?: any }) {
   const [out, setOut] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const pieces = useMemo(() => Array.from({ length: 80 }), []);
@@ -285,7 +358,7 @@ function CandleMoment({ onBlow }: { onBlow: () => void }) {
           {!out && <div className="flame" />}
         </div>
       </div>
-      <div className="uppercase-mono opacity-60 mt-3">{out ? "make a wish · the morning is yours" : "blow out the candle"}</div>
+      <div className="uppercase-mono opacity-60 mt-3">{out ? (copy?.candleHint || BIRTHDAY_COPY_TEMPLATE.candleHint) : "blow out the candle"}</div>
       <button
         className="btn-solid mt-4"
         onClick={() => {
@@ -297,7 +370,7 @@ function CandleMoment({ onBlow }: { onBlow: () => void }) {
         }}
         disabled={out}
       >
-        {out ? "wish made ♡" : "blow"}
+        {out ? (copy?.candleDoneHint || BIRTHDAY_COPY_TEMPLATE.candleDoneHint) : (copy?.candleDoneCta || BIRTHDAY_COPY_TEMPLATE.candleDoneCta)}
       </button>
       {confetti && (
         <div className="confetti" aria-hidden>
@@ -329,18 +402,19 @@ function CandleMoment({ onBlow }: { onBlow: () => void }) {
   );
 }
 
-function ReplyForm({ slug }: { slug: string }) {
+function ReplyForm({ slug, copy: copyProp }: { slug: string; copy?: any }) {
   const [text, setText] = useState("");
   const [done, setDone] = useState(false);
   const reply = useSendDayReply();
+  const c = { ...REPLY_COPY_TEMPLATE, ...(copyProp ?? {}) };
   if (done) {
     return (
       <div className="mx-auto max-w-xl mt-10 reply-card text-center">
         <div className="uppercase-mono opacity-60">received · slowly</div>
         <div className="font-serif italic text-2xl mt-2" style={{ color: "var(--rose-deep)" }}>
-          your one-line reply landed.
+          {c.sentTitle}
         </div>
-        <div className="font-serif italic mt-3" style={{ color: "var(--mauve)" }}>he'll know.</div>
+        <div className="font-serif italic mt-3" style={{ color: "var(--mauve)" }}>{c.sentBody}</div>
       </div>
     );
   }
@@ -360,13 +434,13 @@ function ReplyForm({ slug }: { slug: string }) {
     >
       <div className="uppercase-mono opacity-70">leave a one-line reply</div>
       <div className="font-serif italic text-xl mt-1" style={{ color: "var(--mauve)" }}>
-        a single sentence, anything. only he sees it.
+        {c.prompt}
       </div>
       <textarea
         className="field mt-4"
         rows={3}
         maxLength={400}
-        placeholder="say one thing back…"
+        placeholder={c.placeholder}
         value={text}
         onChange={(e: any) => setText(e.target.value)}
       />
@@ -463,7 +537,11 @@ function ScratchLayout({ day }: { day: ApiDay }) {
 }
 
 function TerminalLayout({ day }: { day: ApiDay }) {
-  const [lines, setLines] = useState<string[]>(["Initializing system...", "Loading encrypted memory...", "Done.", "Type 'help' for commands."]);
+  const term = dayCopy(day, "terminal");
+  const defaultBoot = ["Initializing system...", "Loading encrypted memory...", "Done.", "Type 'help' for commands."];
+  const bootLines: string[] = Array.isArray(term.boot) && term.boot.length > 0 ? term.boot : defaultBoot;
+  const customCmds: { name: string; response: string }[] = Array.isArray(term.commands) ? term.commands : [];
+  const [lines, setLines] = useState<string[]>(bootLines);
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -471,16 +549,27 @@ function TerminalLayout({ day }: { day: ApiDay }) {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [lines]);
 
+  // Reset boot lines if admin edits them.
+  useEffect(() => {
+    setLines(bootLines);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bootLines.join("|")]);
+
   const handleCommand = (e: React.FormEvent) => {
     e.preventDefault();
     const cmd = input.toLowerCase().trim();
     if (!cmd) return;
     let response = `Command not found: ${cmd}`;
-    if (cmd === "help") response = "Available commands: bio, secret, clear, date";
-    if (cmd === "bio") response = "Subject: Yin. Status: Extraordinary. Location: Deep in my thoughts.";
-    if (cmd === "secret") response = "I still have that napkin from the first night.";
-    if (cmd === "date") response = new Date().toString();
-    if (cmd === "clear") { setLines([]); setInput(""); return; }
+    const custom = customCmds.find(c => c?.name?.toLowerCase() === cmd);
+    if (custom) response = custom.response;
+    else if (cmd === "help") {
+      const names = ["bio", "secret", "clear", "date", ...customCmds.map(c => c.name).filter(Boolean)];
+      response = `Available commands: ${Array.from(new Set(names)).join(", ")}`;
+    }
+    else if (cmd === "bio") response = "Subject: Yin. Status: Extraordinary. Location: Deep in my thoughts.";
+    else if (cmd === "secret") response = "I still have that napkin from the first night.";
+    else if (cmd === "date") response = new Date().toString();
+    else if (cmd === "clear") { setLines([]); setInput(""); return; }
 
     setLines((prev: any) => [...prev, `> ${input}`, response]);
     setInput("");
@@ -586,29 +675,39 @@ function SlideshowLayout({ day }: { day: ApiDay }) {
 }
 
 function BirthdayLayout({ day }: { day: ApiDay }) {
-  const [isOpened, setIsOpened] = useState(false);
+  const birthday = { ...BIRTHDAY_COPY_TEMPLATE, ...dayCopy(day, "birthday") };
+  const letter = { ...LETTER_COPY_TEMPLATE, ...dayCopy(day, "letter") };
+  const [isOpened, setIsOpened] = useState(() => {
+    try { return localStorage.getItem(`envelope-opened-${day.slug}`) === "1"; }
+    catch { return false; }
+  });
   const audio = useAudio();
+  const open = () => {
+    try { localStorage.setItem(`envelope-opened-${day.slug}`, "1"); } catch {}
+    setIsOpened(true);
+  };
   const onBlow = () => {
-    if (day.youtubeId) audio.play(day.youtubeId);
+    const src = resolveAudio(day);
+    if (src.type === "youtube" && audio.currentId !== src.id) audio.play(src.id);
   };
 
   return (
     <PageFrame>
       <AnimatePresence>
         {!isOpened && (
-          <motion.div 
+          <motion.div
             className="envelope-gate"
             exit={{ opacity: 0, transition: { duration: 1 } }}
           >
             <div className="text-center">
-              <motion.div 
+              <motion.div
                 className="envelope"
                 whileHover={{ y: -5 }}
-                onClick={() => setIsOpened(true)}
+                onClick={() => open()}
               >
                 <div className="envelope-flap" />
                 <div className="absolute inset-0 grid place-items-center font-serif italic text-3xl pt-8">
-                  For Yin
+                  {birthday.envelopeCta || "For Yin"}
                 </div>
               </motion.div>
               <div className="uppercase-mono mt-12 opacity-40 animate-pulse">tap to unlock the day</div>
@@ -632,18 +731,20 @@ function BirthdayLayout({ day }: { day: ApiDay }) {
               ["--mask-image" as any]: `url(${IMG.birthdayFloral})`,
             }}
           >
-            HAPPY<br/>BIRTHDAY<br/>YIN
+            {(day.title || "HAPPY BIRTHDAY YIN").split(" ").map((w, i, arr) => (
+              <span key={i}>{w}{i < arr.length - 1 && <br/>}</span>
+            ))}
           </h1>
         </motion.div>
-        
+
         <motion.div
           initial={{ opacity: 0 }}
           animate={isOpened ? { opacity: 1 } : {}}
           transition={{ delay: 0.8, duration: 1.5 }}
-          className="font-serif italic text-2xl mt-6" 
+          className="font-serif italic text-2xl mt-6"
           style={{ color: "var(--rose-deep)" }}
         >
-          today is the headline. no subhead.
+          {birthday.subhead || "today is the headline. no subhead."}
         </motion.div>
       </div>
 
@@ -652,7 +753,7 @@ function BirthdayLayout({ day }: { day: ApiDay }) {
         animate={isOpened ? { opacity: 1, scale: 1 } : {}}
         transition={{ delay: 1.4, duration: 1 }}
       >
-        <CandleMoment onBlow={onBlow} />
+        <CandleMoment onBlow={onBlow} copy={birthday} />
       </motion.div>
 
       <article className="max-w-3xl mx-auto px-5 sm:px-10 py-12 font-serif text-xl sm:text-2xl leading-[1.55] drop-cap whitespace-pre-wrap">
@@ -660,18 +761,18 @@ function BirthdayLayout({ day }: { day: ApiDay }) {
       </article>
 
       {(day.gallery ?? []).length > 0 && (
-        <PolaroidGallery items={day.gallery ?? []} />
+        <PolaroidGallery items={day.gallery ?? []} prompt={dayCopy(day, "gallery").prompt} />
       )}
 
       <div className="px-5 sm:px-10 max-w-3xl mx-auto pb-4">
         <div className="font-serif italic text-2xl">{day.signoff}</div>
-        <SignatureBlock svg={day.signatureSvg} />
+        <SignatureBlock svg={day.signatureSvg} signedAs={letter.signedAs} />
       </div>
 
-      <VoiceNoteBlock url={day.voiceNoteUrl} />
+      <VoiceNoteBlock url={day.voiceNoteUrl} copy={dayCopy(day, "voiceNote")} />
 
       <div className="px-5 sm:px-10 pb-16">
-        <ReplyForm slug={day.slug} />
+        <ReplyForm slug={day.slug} copy={dayCopy(day, "reply")} />
       </div>
 
       <SongBlock day={day} />
@@ -684,17 +785,16 @@ export default function DayPage() {
   const [, params] = useRoute<{ slug: string }>("/day/:slug");
   const slug = params?.slug ?? "";
   const [, navigate] = useLocation();
-  const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey() } });
+  const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey(), refetchInterval: 3_000, refetchOnWindowFocus: true, refetchOnMount: 'always' } });
   const { data: day, error, isLoading } = useGetDay(slug, {
-    query: { queryKey: getGetDayQueryKey(slug), retry: false, enabled: Boolean(slug), refetchInterval: 10_000 },
+    query: { queryKey: getGetDayQueryKey(slug), retry: false, enabled: Boolean(slug), refetchInterval: 3_000, refetchOnWindowFocus: true, refetchOnMount: 'always' },
   });
   const audio = useAudio();
 
   // Auto-play song once on first arrival
   useEffect(() => {
-    if (day?.youtubeId && !audio.currentId) {
-      audio.play(day.youtubeId);
-    }
+    const src = day ? resolveAudio(day) : null;
+    if (src?.type === "youtube" && audio.currentId !== src.id) audio.play(src.id);
   }, [day?.slug]); // eslint-disable-line
 
   // Pingback: tell the server we opened it (once per device per slug)

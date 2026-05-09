@@ -1,10 +1,17 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import router from "./routes/index.js";
 import { logger } from "./lib/logger.js";
 
 const app = express();
+
+let _startupPromise: Promise<unknown> | null = null;
+export function setStartupGate(p: Promise<unknown>): void { _startupPromise = p; }
+
+app.use((_req: Request, _res: Response, next: NextFunction) => {
+  if (_startupPromise) { _startupPromise.then(() => next(), () => next()); } else { next(); }
+});
 
 app.use(
   (pinoHttp as any)({

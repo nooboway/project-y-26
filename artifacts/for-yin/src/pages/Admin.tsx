@@ -24,6 +24,9 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import { adminHeaders, getAdminToken, setAdminToken } from "@/lib/admin";
 import { MediaUpload } from '@/components/MediaUpload';
+import { CopyEditor } from "@/components/CopyEditor";
+import { SITE_COPY_TEMPLATE, DAY_COPY_TEMPLATES } from "@/lib/copyDefaults";
+import { COUNTDOWN_STYLES, type CountdownStyle } from "@/components/Countdown";
 
 function Login({ onIn }: { onIn: () => void }) {
   const [pass, setPass] = useState("");
@@ -101,6 +104,30 @@ function SiteEditor({ onChanged }: { onChanged: () => void }) {
         {F("coordinates", "coordinates", "text", true)}
         {F("coordinatesPlace", "coordinates · place", "text", true)}
       </div>
+      <div className="mt-6">
+        <div className="uppercase-mono opacity-70 mb-2">countdown style</div>
+        <select
+          className="field"
+          value={form.copy?.countdown?.style ?? "numbers"}
+          onChange={(e: any) =>
+            setForm({ ...form, copy: { ...(form.copy ?? {}),
+              countdown: { ...(form.copy?.countdown ?? {}),
+                style: e.target.value as CountdownStyle } } })
+          }
+        >
+          {COUNTDOWN_STYLES.map((s) => (
+            <option key={s.value} value={s.value}>{s.label} — {s.hint}</option>
+          ))}
+        </select>
+      </div>
+      <div className="mt-6">
+        <div className="uppercase-mono opacity-70 mb-3">copy / display text</div>
+        <CopyEditor
+          template={SITE_COPY_TEMPLATE}
+          value={form.copy}
+          onChange={(v) => setForm({ ...form, copy: v })}
+        />
+      </div>
       <div className="mt-6 flex items-center gap-3">
         <button className="btn-solid" disabled={update.isPending}
           onClick={async () => {
@@ -115,6 +142,7 @@ function SiteEditor({ onChanged }: { onChanged: () => void }) {
                 coordinates: form.coordinates,
                 coordinatesPlace: form.coordinatesPlace,
                 unlockOverride: form.unlockOverride,
+                copy: form.copy,
               },
             }, { onSuccess: () => { refetch(); onChanged(); } });
           }}>
@@ -122,6 +150,15 @@ function SiteEditor({ onChanged }: { onChanged: () => void }) {
         </button>
         <span className="uppercase-mono opacity-60">issue {form.unlockOverride > 0 ? `manually unlocked to ${form.unlockOverride}` : "auto by date"}</span>
       </div>
+      {form.unlockOverride > 0 && (
+        <div
+          className="uppercase-mono text-[9px] mt-2 px-3 py-2 border"
+          style={{ borderColor: "var(--rose-deep)", color: "var(--rose-deep)", background: "rgba(196,122,106,0.06)" }}
+        >
+          ⚠ override active — all cards up to {form.unlockOverride} are forced open.
+          set to 0 when done testing.
+        </div>
+      )}
     </Section>
   );
 }
@@ -193,6 +230,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
         songTitle: d.songTitle,
         songArtist: d.songArtist,
         youtubeId: d.youtubeId,
+        unlockTime: (d as any).unlockTime ?? "00:00",
         drafts,
         reasons,
         gallery,
@@ -202,7 +240,8 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
         voiceNoteUrl: d.voiceNoteUrl ?? "",
         previewText: d.previewText ?? "",
         audioUrl: d.audioUrl ?? "",
-      },
+        copy: (d as any).copy,
+      } as any,
     }, { onSuccess: () => onChanged() });
   };
 
@@ -278,6 +317,18 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           <input className="field" value={d.songArtist ?? ""} onChange={(e: any) => set({ songArtist: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">youtube id</div>
           <input className="field" value={d.youtubeId ?? ""} onChange={(e: any) => set({ youtubeId: e.target.value })} /></label>
+        <label>
+          <div className="uppercase-mono opacity-70 mb-1">unlock time (GMT+1, HH:MM)</div>
+          <input
+            className="field"
+            type="time"
+            value={(d as any).unlockTime ?? "00:00"}
+            onChange={(e: any) => set({ unlockTime: e.target.value } as any)}
+          />
+          <div className="uppercase-mono opacity-40 text-[9px] mt-1">
+            time is GMT+1 — 00:00 = midnight GMT+1 (current default)
+          </div>
+        </label>
         <div className="sm:col-span-1">
           <div className="uppercase-mono opacity-70 mb-1">Voice Note (mp3/m4a/ogg)</div>
           <MediaUpload
@@ -413,6 +464,15 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           <button type="button" className="btn-pill mt-2" onClick={() => set({ slides: [...slides, { body: "", sub: "" }] })}>+ slide</button>
         </div>
 
+        <div className="sm:col-span-2">
+          <div className="uppercase-mono opacity-70 mb-3">copy / display text</div>
+          <CopyEditor
+            template={DAY_COPY_TEMPLATES[d.kind] ?? {}}
+            value={(d as any).copy}
+            onChange={(v) => set({ copy: v } as any)}
+          />
+        </div>
+
         <div className="sm:col-span-2 flex items-center gap-3">
           <button type="button" className="btn-solid" disabled={update.isPending} onClick={save}>
             {update.isPending ? "saving…" : "save day"}
@@ -488,6 +548,9 @@ export default function Admin() {
   const days = useAdminListDays({ request: { headers }, query: { queryKey: getAdminListDaysQueryKey(), enabled: authed } });
 
   const invalidateAll = () => {
+    // Push an immediate update signal to any other open tab (Cover, Day page)
+    try { new BroadcastChannel("site-update").postMessage("refresh"); } catch {}
+
     qc.refetchQueries({ queryKey: getGetSiteQueryKey() });
     qc.refetchQueries({ queryKey: getGetLiveMessageQueryKey() });
     qc.refetchQueries({ queryKey: getListDaysQueryKey() });

@@ -280,6 +280,7 @@ components:
         isBirthday: { type: boolean }
         isAftermath: { type: boolean }
         secondsUntilBirthday: { type: integer }
+        copy: { type: object, additionalProperties: true }
       required:
         [title, recipientName, senderName, startDate, birthdayDate, accentColor,
          coordinates, coordinatesPlace, serverNow, currentDayIndex, totalDays,
@@ -297,6 +298,7 @@ components:
       properties:
         slug: { type: string }
         index: { type: integer }
+        igboTitle: { type: string }
         title: { type: string }
         eyebrow: { type: string }
         kind:
@@ -307,7 +309,7 @@ components:
         unlockDate: { type: string }
         youtubeId: { type: string }
         previewText: { type: string }
-      required: [slug, index, title, eyebrow, kind, unlocked, isToday, unlockDate, youtubeId, previewText]
+      required: [slug, index, igboTitle, title, eyebrow, kind, unlocked, isToday, unlockDate, youtubeId, previewText]
 
     LockedDay:
       type: object
@@ -359,6 +361,7 @@ components:
       properties:
         slug: { type: string }
         index: { type: integer }
+        igboTitle: { type: string }
         title: { type: string }
         eyebrow: { type: string }
         kind:
@@ -393,8 +396,11 @@ components:
           items: { $ref: "#/components/schemas/Slide" }
         audioUrl:
           type: string
+        unlockTime:
+          type: string
+        copy: { type: object, additionalProperties: true }
       required:
-        [slug, index, title, eyebrow, kind, unlockDate, body]
+        [slug, index, igboTitle, title, eyebrow, kind, unlockDate, body]
 
     AdminLoginBody:
       type: object
@@ -422,6 +428,7 @@ components:
         unlockOverride:
           type: integer
           description: "0 = none, otherwise force currentDayIndex to this value"
+        copy: { type: object, additionalProperties: true }
       required:
         [title, recipientName, senderName, startDate, birthdayDate, accentColor,
          coordinates, coordinatesPlace, unlockOverride]
@@ -438,6 +445,7 @@ components:
         coordinates: { type: string }
         coordinatesPlace: { type: string }
         unlockOverride: { type: integer }
+        copy: { type: object, additionalProperties: true }
 
     AdminUpdateLiveBody:
       type: object
@@ -449,6 +457,7 @@ components:
       type: object
       properties:
         title: { type: string }
+        igboTitle: { type: string }
         eyebrow: { type: string }
         kind:
           type: string
@@ -462,6 +471,8 @@ components:
         youtubeId: { type: string }
         signatureSvg: { type: string }
         voiceNoteUrl: { type: string }
+        audioUrl: { type: string }
+        unlockTime: { type: string }
         previewText: { type: string }
         drafts:
           type: array
@@ -472,6 +483,13 @@ components:
         gallery:
           type: array
           items: { $ref: "#/components/schemas/GalleryImage" }
+        scratchCards:
+          type: array
+          items: { $ref: "#/components/schemas/ScratchCard" }
+        slides:
+          type: array
+          items: { $ref: "#/components/schemas/Slide" }
+        copy: { type: object, additionalProperties: true }
 
     SeenStamp:
       type: object

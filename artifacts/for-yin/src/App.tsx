@@ -1,5 +1,6 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { LayoutGroup } from "framer-motion";
 import { AudioProvider } from "@/lib/audio";
 import { FloatingAudio } from "@/components/Chrome";
 import Cover from "@/pages/Cover";
@@ -39,8 +40,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AudioProvider>
         <WouterRouter base={((import.meta as any).env.BASE_URL || "").replace(/\/$/, "")}>
-          <Routes />
-          <FloatingAudio />
+          <LayoutGroup>
+            <Routes />
+            <FloatingAudio />
+          </LayoutGroup>
         </WouterRouter>
       </AudioProvider>
     </QueryClientProvider>

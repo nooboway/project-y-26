@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useGetLiveMessage, useGetSite, getGetLiveMessageQueryKey, getGetSiteQueryKey } from "@workspace/api-client-react";
 import { useAudio } from "@/lib/audio";
 import { Link, useLocation } from "wouter";
+import { SITE_COPY_TEMPLATE } from "@/lib/copyDefaults";
 
 export function CoordStamp({ coords, place }: { coords: string; place: string }) {
   return (
@@ -13,15 +14,20 @@ export function CoordStamp({ coords, place }: { coords: string; place: string })
 }
 
 export function Ticker({ accent = false }: { accent?: boolean }) {
-  const { data } = useGetLiveMessage({
-    query: { queryKey: getGetLiveMessageQueryKey(), refetchInterval: 60_000, staleTime: 30_000 },
+  const { data: live } = useGetLiveMessage({
+    query: { queryKey: getGetLiveMessageQueryKey(), refetchInterval: 3_000, refetchOnWindowFocus: true },
   });
-  const text = data?.text?.trim() || "thinking about you, in the cab, right now.";
-  const items = Array.from({ length: 8 }).map((_, i) => (
+  const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey() } });
+  const tickerCopy = { ...SITE_COPY_TEMPLATE.ticker, ...((site as any)?.copy?.ticker ?? {}) };
+  // Live message takes precedence; otherwise fall back to ticker.accent (admin-edited)
+  // or the template default.
+  const text = live?.text?.trim() || tickerCopy.accent || "thinking about you, in the cab, right now.";
+  const suffix = tickerCopy.suffix || "live from him";
+  const items = Array.from({ length: 2 }).map((_, i) => (
     <span key={i} className="font-mono uppercase text-[11px] tracking-[0.18em]">
       {text}
       <span className="mx-6 opacity-50">✦</span>
-      live from him
+      {suffix}
       <span className="mx-6 opacity-50">✦</span>
     </span>
   ));
