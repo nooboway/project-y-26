@@ -80,13 +80,13 @@ export default function Cover() {
             className="font-display leading-[0.82] -mt-2"
             style={{ fontSize: "clamp(64px, 16vw, 220px)" }}
           >
-            <span className="outline-text">{heroCopy.lineOne}</span>
+            <span className="outline-text">{heroCopy.lineOne || SITE_COPY_TEMPLATE.hero.lineOne}</span>
             <br />
             <span style={{ fontStyle: "italic", fontFamily: "var(--font-serif)", fontWeight: 600, color: "var(--rose-deep)" }}>
-              {heroCopy.lineTwo}
+              {heroCopy.lineTwo || SITE_COPY_TEMPLATE.hero.lineTwo}
             </span>
             <br />
-            <span style={{ color: "var(--ink)" }}>{heroCopy.lineThree}</span>
+            <span style={{ color: "var(--ink)" }}>{heroCopy.lineThree || SITE_COPY_TEMPLATE.hero.lineThree}</span>
           </div>
 
           <p className="font-serif italic text-xl sm:text-2xl mt-6 max-w-md leading-snug" style={{ color: "var(--mauve)" }}>
@@ -111,7 +111,7 @@ export default function Cover() {
             transition={{ duration: 0.9, ease: [0.2, 0.8, 0.2, 1] }}
             className="relative aspect-[4/5] overflow-hidden"
           >
-            <img src={IMG.coverHero} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img src={heroCopy.image || (today as any)?.heroImage || IMG.coverHero} alt="" className="absolute inset-0 h-full w-full object-cover" />
             <div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between text-[var(--cream)]"
                  style={{ background: "linear-gradient(180deg, transparent, rgba(12,10,10,.65))" }}>
               <div className="uppercase-mono opacity-90">{coverCopy.photoCaption}</div>
