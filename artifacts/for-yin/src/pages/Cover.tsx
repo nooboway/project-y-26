@@ -80,7 +80,7 @@ export default function Cover() {
             className="font-display leading-[0.82] mt-16"
             style={{ fontSize: "clamp(64px, 16vw, 220px)" }}
           >
-            <span style={{ color: "var(--ink)" }}>{heroCopy.lineOne || SITE_COPY_TEMPLATE.hero.lineOne}</span>
+            <span style={{ color: "#0c0a0a" }}>{(heroCopy.lineOne || "").trim() || SITE_COPY_TEMPLATE.hero.lineOne}</span>
             <br />
             <span style={{ fontStyle: "italic", fontFamily: "var(--font-serif)", fontWeight: 600, color: "var(--rose-deep)" }}>
               {heroCopy.lineTwo || SITE_COPY_TEMPLATE.hero.lineTwo}
