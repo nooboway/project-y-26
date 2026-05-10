@@ -56,6 +56,7 @@ export async function ensureMigrate(): Promise<void> {
       ALTER TABLE days ADD COLUMN IF NOT EXISTS slides text NOT NULL DEFAULT '[]';
       ALTER TABLE days ADD COLUMN IF NOT EXISTS audio_url text NOT NULL DEFAULT '';
       ALTER TABLE days ADD COLUMN IF NOT EXISTS copy jsonb NOT NULL DEFAULT '{}';
+      ALTER TABLE days ADD COLUMN IF NOT EXISTS unlock_time text NOT NULL DEFAULT '00:00';
       ALTER TABLE site_config ADD COLUMN IF NOT EXISTS copy jsonb NOT NULL DEFAULT '{}';
     `);
     logger.info("DB migration: schema ensured");
