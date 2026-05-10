@@ -13,7 +13,7 @@ import {
   loadDays,
   computeDayIndex,
   dayUnlockDateIso,
-  dayUnlockDatetimeMs,
+  isDayUnlocked,
 } from "../lib/lock.js";
 
 const router = express.Router();
@@ -29,7 +29,7 @@ router.get("/days", async (_req: Request, res: Response): Promise<void> => {
 
   const summaries = days.map((d) => {
     const unlockTime = (d as any).unlockTime ?? "00:00";
-    const unlocked = isAftermath || d.index <= currentDayIndex || nowMs >= dayUnlockDatetimeMs(site.startDate, d.index, unlockTime);
+    const unlocked = isDayUnlocked(site, { index: d.index, unlockTime }, { currentDayIndex, isAftermath }, nowMs);
 
     // "Tomorrow" — the next card to unlock. Show its igboTitle as a teaser
     // so she anticipates what's coming, but nothing else leaks.
@@ -73,7 +73,7 @@ router.get("/days/:slug", async (req: Request, res: Response): Promise<void> => 
     return;
   }
   const unlockTime = (day as any).unlockTime ?? "00:00";
-  const unlocked = isAftermath || day.index <= currentDayIndex || nowMs >= dayUnlockDatetimeMs(site.startDate, day.index, unlockTime);
+  const unlocked = isDayUnlocked(site, { index: day.index, unlockTime }, { currentDayIndex, isAftermath }, nowMs);
   if (!unlocked) {
     res.status(423).json({
       slug: day.slug,
@@ -126,7 +126,7 @@ router.post("/days/:slug/seen", async (req: Request, res: Response): Promise<voi
     site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
   );
   const unlockTime = (existing as any).unlockTime ?? "00:00";
-  const unlocked = isAftermath || existing.index <= currentDayIndex || nowMs >= dayUnlockDatetimeMs(site.startDate, existing.index, unlockTime);
+  const unlocked = isDayUnlocked(site, { index: existing.index, unlockTime }, { currentDayIndex, isAftermath }, nowMs);
   if (!unlocked) { res.status(423).json({ error: "Locked" }); return; }
   const firstOpen = !existing.openedAt;
   if (firstOpen) {

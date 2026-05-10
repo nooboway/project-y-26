@@ -97,6 +97,31 @@ export function computeDayIndex(
   };
 }
 
+/**
+ * Returns whether a single day is unlocked.
+ *
+ * Authoritative rule:
+ *   - Aftermath state (after birthday) → all days unlocked
+ *   - When admin set unlockOverride > 0 → ONLY index comparison applies.
+ *     This is critical: without override taking precedence, a startDate
+ *     in the past would unlock all days regardless of the override.
+ *   - Otherwise → use per-day unlock datetime (startDate + (idx-1) days
+ *     at unlockTime in GMT+1).
+ */
+export function isDayUnlocked(
+  site: { startDate: string; unlockOverride: number },
+  day: { index: number; unlockTime?: string | null },
+  computed: { currentDayIndex: number; isAftermath: boolean },
+  nowMs: number,
+): boolean {
+  if (computed.isAftermath) return true;
+  if (site.unlockOverride && site.unlockOverride > 0) {
+    return day.index <= computed.currentDayIndex;
+  }
+  const unlockTime = day.unlockTime ?? "00:00";
+  return nowMs >= dayUnlockDatetimeMs(site.startDate, day.index, unlockTime);
+}
+
 export async function loadSite(): Promise<SiteConfigRow> {
   const [row] = await db.select().from(siteConfigTable).where(eq(siteConfigTable.id, 1));
   if (!row) throw new Error("Site config not seeded");
