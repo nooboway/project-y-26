@@ -598,15 +598,128 @@ function ScratchLayout({ day }: { day: ApiDay }) {
   );
 }
 
+// Sequential typewriter: types segments[0] fully, then segments[1], etc.
+// Returns: revealed[i] = current visible text for that segment, activeIdx =
+// which segment is currently typing (or segments.length when finished).
+// Variable per-character delay with longer pauses on punctuation/newlines
+// gives a "real-time human typing" feel.
+function useTypewriterSeq(
+  segments: string[],
+  opts?: { speedMs?: number; jitterMs?: number; segmentPauseMs?: number; startDelayMs?: number },
+) {
+  const speed = opts?.speedMs ?? 32;
+  const jitter = opts?.jitterMs ?? 30;
+  const segPause = opts?.segmentPauseMs ?? 380;
+  const startDelay = opts?.startDelayMs ?? 220;
+
+  // Use joined string as a stable dep — same content shouldn't restart.
+  const key = segments.join(" ");
+
+  const [revealed, setRevealed] = useState<string[]>(() => segments.map(() => ""));
+  const [activeIdx, setActiveIdx] = useState(0);
+
+  useEffect(() => {
+    if (segments.length === 0 || segments.every((s) => !s)) {
+      setRevealed(segments.map((s) => s ?? ""));
+      setActiveIdx(segments.length);
+      return;
+    }
+    let cancelled = false;
+    let timer: number | undefined;
+
+    setRevealed(segments.map(() => ""));
+    setActiveIdx(0);
+
+    let cur = 0;
+    let i = 0;
+
+    // Skip leading empty segments
+    while (cur < segments.length && !segments[cur]) {
+      setRevealed((prev) => { const next = [...prev]; next[cur] = ""; return next; });
+      cur++;
+    }
+    if (cur >= segments.length) { setActiveIdx(segments.length); return; }
+
+    const tick = () => {
+      if (cancelled) return;
+      const seg = segments[cur] ?? "";
+      i++;
+      const ch = seg[i - 1];
+      setRevealed((prev) => { const next = [...prev]; next[cur] = seg.slice(0, i); return next; });
+      setActiveIdx(cur);
+
+      if (i >= seg.length) {
+        // segment done — advance, skipping empty
+        let nextCur = cur + 1;
+        while (nextCur < segments.length && !segments[nextCur]) {
+          setRevealed((prev) => { const next = [...prev]; next[nextCur] = ""; return next; });
+          nextCur++;
+        }
+        if (nextCur >= segments.length) {
+          setActiveIdx(segments.length);
+          return;
+        }
+        cur = nextCur; i = 0;
+        timer = window.setTimeout(tick, segPause);
+        return;
+      }
+
+      let delay = speed + (Math.random() * jitter - jitter / 2);
+      if (ch === "." || ch === "!" || ch === "?") delay += 240;
+      else if (ch === "," || ch === ";" || ch === ":") delay += 110;
+      else if (ch === "\n") delay += 220;
+      else if (ch === "—") delay += 80;
+      timer = window.setTimeout(tick, Math.max(8, delay));
+    };
+
+    timer = window.setTimeout(tick, startDelay);
+    return () => { cancelled = true; if (timer != null) window.clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [key]);
+
+  return { revealed, activeIdx, done: activeIdx >= segments.length };
+}
+
+function NotesCursor() {
+  return (
+    <span
+      aria-hidden
+      style={{
+        display: "inline-block", width: "2px", marginLeft: "2px",
+        height: "1em", verticalAlign: "text-bottom", background: "#f1c40f",
+        animation: "blinkY 1s step-end infinite",
+      }}
+    />
+  );
+}
+
 function TerminalLayout({ day }: { day: ApiDay }) {
-  // Apple Notes layout (dark theme). Renders day.body as an iOS Notes-style
-  // entry. Optional: day.copy.notes.{app,folder,date,title} for chrome.
+  // Apple Notes layout (dark theme) with real-time typewriter.
+  // Optional: day.copy.notes.{app,folder,date,title} for chrome.
   const notes = dayCopy(day, "notes");
   const todayLabel = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
   const dateStr = notes.date || todayLabel;
   const folder = notes.folder || "On My iPhone";
   const noteTitle = notes.title || day.title || "Untitled";
   const reasons: string[] = Array.isArray(day.reasons) ? day.reasons : [];
+
+  // Build segments: title, body, then each reason, then signoff.
+  // The title types first so the note feels like it's being authored.
+  const segments = useMemo(() => {
+    const segs: string[] = [];
+    segs.push(noteTitle);
+    segs.push(day.body ?? "");
+    reasons.forEach((r) => segs.push(r));
+    segs.push(day.signoff ?? "");
+    return segs;
+  }, [noteTitle, day.body, day.signoff, reasons.join(" ")]);
+
+  const { revealed, activeIdx } = useTypewriterSeq(segments, { speedMs: 28, jitterMs: 28, segmentPauseMs: 360 });
+  const TITLE_IDX = 0;
+  const BODY_IDX = 1;
+  const FIRST_REASON_IDX = 2;
+  const LAST_REASON_IDX = FIRST_REASON_IDX + reasons.length - 1;
+  const SIGNOFF_IDX = FIRST_REASON_IDX + reasons.length;
 
   return (
     <PageFrame dark>
@@ -634,46 +747,59 @@ function TerminalLayout({ day }: { day: ApiDay }) {
             boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
           }}
         >
+          <style>{`@keyframes blinkY { 50% { opacity: 0; } }`}</style>
+
           <div className="text-center mb-2 font-mono opacity-50" style={{ fontSize: "11px", color: "#a1a1a6" }}>
             {dateStr}
           </div>
+
           <h1
             className="font-display text-2xl sm:text-3xl mb-5 leading-tight"
-            style={{ color: "#f5f5f7" }}
+            style={{ color: "#f5f5f7", minHeight: "1.4em" }}
           >
-            {noteTitle}
+            {revealed[TITLE_IDX]}
+            {activeIdx === TITLE_IDX && <NotesCursor />}
           </h1>
 
           {day.body && (
             <div
               className="font-serif whitespace-pre-wrap leading-relaxed mb-6"
-              style={{ color: "#e5e5ea", fontSize: "17px", lineHeight: "1.7" }}
+              style={{ color: "#e5e5ea", fontSize: "17px", lineHeight: "1.7", minHeight: activeIdx >= BODY_IDX ? undefined : "1.7em" }}
             >
-              {day.body}
+              {revealed[BODY_IDX]}
+              {activeIdx === BODY_IDX && <NotesCursor />}
             </div>
           )}
 
           {reasons.length > 0 && (
             <ul className="space-y-3 list-none">
-              {reasons.map((r, i) => (
-                <li
-                  key={i}
-                  className="flex items-start gap-3 font-serif"
-                  style={{ color: "#e5e5ea", fontSize: "16px", lineHeight: "1.6" }}
-                >
-                  <span aria-hidden style={{ color: "#f1c40f", marginTop: 2 }}>•</span>
-                  <span>{r}</span>
-                </li>
-              ))}
+              {reasons.map((_, i) => {
+                const segIdx = FIRST_REASON_IDX + i;
+                if (activeIdx < segIdx) return null;
+                return (
+                  <li
+                    key={i}
+                    className="flex items-start gap-3 font-serif"
+                    style={{ color: "#e5e5ea", fontSize: "16px", lineHeight: "1.6" }}
+                  >
+                    <span aria-hidden style={{ color: "#f1c40f", marginTop: 2 }}>•</span>
+                    <span>
+                      {revealed[segIdx]}
+                      {activeIdx === segIdx && <NotesCursor />}
+                    </span>
+                  </li>
+                );
+              })}
             </ul>
           )}
 
-          {day.signoff && (
+          {day.signoff && activeIdx >= SIGNOFF_IDX && (
             <div
               className="font-serif italic mt-8 pt-5"
               style={{ color: "#aeaeb2", fontSize: "15px", borderTop: "1px solid rgba(255,255,255,0.08)" }}
             >
-              {day.signoff}
+              {revealed[SIGNOFF_IDX]}
+              {activeIdx === SIGNOFF_IDX && <NotesCursor />}
             </div>
           )}
         </div>
