@@ -22,6 +22,68 @@ function dayCopy<K extends string>(day: any, key: K): any {
   return (day?.copy?.[key] ?? {}) as any;
 }
 
+const TEN_WAYS_DEFAULT: readonly string[] = [
+  "The way you laugh like you're telling the room a secret",
+  "How you make silence feel comfortable instead of empty",
+  "That soft focus you get when you're really listening",
+  "The way you carry yourself when you think no one's watching",
+  "How you turn small moments into something worth remembering",
+  "Your stubbornness mixed with that unexpected softness",
+  "The way my name sounds different when it comes from you",
+  "How you make me want to be more present than I usually am",
+  "Your specific kind of chaos that somehow feels like home",
+  "The quiet confidence that you don't even know you have",
+] as const;
+
+function TenWaysModal({ open, onClose, lines, heading }: { open: boolean; onClose: () => void; lines: string[]; heading: string }) {
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = ""; };
+  }, [open, onClose]);
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="fixed inset-0 z-[60] grid place-items-center px-5 py-10"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          style={{ background: "rgba(12,10,10,0.78)", backdropFilter: "blur(8px)" }}
+          onClick={onClose}
+        >
+          <motion.div
+            className="relative max-w-xl w-full p-7 sm:p-10 max-h-[88vh] overflow-y-auto"
+            initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 24, opacity: 0 }}
+            transition={{ duration: 0.32, ease: [0.2, 0.8, 0.2, 1] }}
+            style={{ background: "var(--paper, #f5e9dd)", color: "var(--ink, #1a0f0f)", border: "1px solid rgba(0,0,0,0.08)" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button" aria-label="close"
+              onClick={onClose}
+              className="absolute right-3 top-3 h-8 w-8 grid place-items-center font-mono uppercase text-xs opacity-70 hover:opacity-100"
+            >×</button>
+            <div className="font-display text-3xl sm:text-4xl leading-tight mb-6" style={{ color: "var(--rose-deep)" }}>
+              {heading}
+            </div>
+            <ol className="space-y-3 list-none">
+              {lines.map((line, i) => (
+                <li key={i} className="grid grid-cols-[40px_1fr] gap-3">
+                  <div className="font-display text-2xl tabular-nums" style={{ color: "var(--rose-deep)" }}>
+                    {String(i + 1).padStart(2, "0")}
+                  </div>
+                  <div className="font-serif text-lg leading-snug">{line}</div>
+                </li>
+              ))}
+            </ol>
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+}
+
 function BackBar({ index, kind }: { index: number; kind: string }) {
   return (
     <div className="flex items-center justify-between px-5 sm:px-10 pt-6">
@@ -537,68 +599,88 @@ function ScratchLayout({ day }: { day: ApiDay }) {
 }
 
 function TerminalLayout({ day }: { day: ApiDay }) {
-  const term = dayCopy(day, "terminal");
-  const defaultBoot = ["Initializing system...", "Loading encrypted memory...", "Done.", "Type 'help' for commands."];
-  const bootLines: string[] = Array.isArray(term.boot) && term.boot.length > 0 ? term.boot : defaultBoot;
-  const customCmds: { name: string; response: string }[] = Array.isArray(term.commands) ? term.commands : [];
-  const [lines, setLines] = useState<string[]>(bootLines);
-  const [input, setInput] = useState("");
-  const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [lines]);
-
-  // Reset boot lines if admin edits them.
-  useEffect(() => {
-    setLines(bootLines);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bootLines.join("|")]);
-
-  const handleCommand = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cmd = input.toLowerCase().trim();
-    if (!cmd) return;
-    let response = `Command not found: ${cmd}`;
-    const custom = customCmds.find(c => c?.name?.toLowerCase() === cmd);
-    if (custom) response = custom.response;
-    else if (cmd === "help") {
-      const names = ["bio", "secret", "clear", "date", ...customCmds.map(c => c.name).filter(Boolean)];
-      response = `Available commands: ${Array.from(new Set(names)).join(", ")}`;
-    }
-    else if (cmd === "bio") response = "Subject: Yin. Status: Extraordinary. Location: Deep in my thoughts.";
-    else if (cmd === "secret") response = "I still have that napkin from the first night.";
-    else if (cmd === "date") response = new Date().toString();
-    else if (cmd === "clear") { setLines([]); setInput(""); return; }
-
-    setLines((prev: any) => [...prev, `> ${input}`, response]);
-    setInput("");
-  };
+  // Apple Notes layout (dark theme). Renders day.body as an iOS Notes-style
+  // entry. Optional: day.copy.notes.{app,folder,date,title} for chrome.
+  const notes = dayCopy(day, "notes");
+  const todayLabel = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  const dateStr = notes.date || todayLabel;
+  const folder = notes.folder || "On My iPhone";
+  const noteTitle = notes.title || day.title || "Untitled";
+  const reasons: string[] = Array.isArray(day.reasons) ? day.reasons : [];
 
   return (
     <PageFrame dark>
       <BackBar index={day.index} kind={day.kind} />
-      <div className="max-w-3xl mx-auto px-5 sm:px-10 py-12">
-        <div className="terminal-window">
-          <div className="space-y-1 mb-4 h-[300px] overflow-y-auto no-scrollbar font-mono text-sm sm:text-base">
-            {lines.map((l: any, i: any) => <div key={i}>{l}</div>)}
-            <div ref={endRef} />
+      <div className="max-w-2xl mx-auto px-5 sm:px-10 py-10 sm:py-14">
+        {/* iOS Notes header */}
+        <div className="flex items-center justify-between mb-3 sm:mb-4 select-none" style={{ color: "#f1c40f" }}>
+          <div className="flex items-center gap-1 font-mono text-[12px] sm:text-sm">
+            <span aria-hidden style={{ fontSize: "16px", lineHeight: 1 }}>‹</span>
+            <span className="opacity-90">{folder}</span>
           </div>
-          <form onSubmit={handleCommand} className="flex items-center font-mono text-sm sm:text-base">
-            <span className="mr-2 text-[#00ff41]">{">"}</span>
-            <input 
-              type="text" 
-              className="bg-transparent border-none outline-none flex-1 text-[#00ff41]" 
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              autoFocus
-            />
-            <span className="terminal-cursor" />
-          </form>
+          <div className="flex items-center gap-3 opacity-90 font-mono text-[12px] sm:text-sm">
+            <span aria-hidden>⤴</span>
+            <span aria-hidden>✎</span>
+            <span aria-hidden>···</span>
+          </div>
         </div>
-        <p className="font-serif text-cream text-lg mt-8 opacity-70 italic whitespace-pre-wrap">{day.body}</p>
+
+        {/* Note body — dark notes paper feel */}
+        <div
+          className="rounded-md p-5 sm:p-7 sm:p-8"
+          style={{
+            background: "#1c1c1e",
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: "0 24px 60px rgba(0,0,0,0.45)",
+          }}
+        >
+          <div className="text-center mb-2 font-mono opacity-50" style={{ fontSize: "11px", color: "#a1a1a6" }}>
+            {dateStr}
+          </div>
+          <h1
+            className="font-display text-2xl sm:text-3xl mb-5 leading-tight"
+            style={{ color: "#f5f5f7" }}
+          >
+            {noteTitle}
+          </h1>
+
+          {day.body && (
+            <div
+              className="font-serif whitespace-pre-wrap leading-relaxed mb-6"
+              style={{ color: "#e5e5ea", fontSize: "17px", lineHeight: "1.7" }}
+            >
+              {day.body}
+            </div>
+          )}
+
+          {reasons.length > 0 && (
+            <ul className="space-y-3 list-none">
+              {reasons.map((r, i) => (
+                <li
+                  key={i}
+                  className="flex items-start gap-3 font-serif"
+                  style={{ color: "#e5e5ea", fontSize: "16px", lineHeight: "1.6" }}
+                >
+                  <span aria-hidden style={{ color: "#f1c40f", marginTop: 2 }}>•</span>
+                  <span>{r}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          {day.signoff && (
+            <div
+              className="font-serif italic mt-8 pt-5"
+              style={{ color: "#aeaeb2", fontSize: "15px", borderTop: "1px solid rgba(255,255,255,0.08)" }}
+            >
+              {day.signoff}
+            </div>
+          )}
+        </div>
       </div>
+      <VoiceNoteBlock url={day.voiceNoteUrl} copy={dayCopy(day, "voiceNote")} />
       <SongBlock day={day} />
+      <Ticker />
     </PageFrame>
   );
 }
@@ -677,6 +759,15 @@ function SlideshowLayout({ day }: { day: ApiDay }) {
 function BirthdayLayout({ day }: { day: ApiDay }) {
   const birthday = { ...BIRTHDAY_COPY_TEMPLATE, ...dayCopy(day, "birthday") };
   const letter = { ...LETTER_COPY_TEMPLATE, ...dayCopy(day, "letter") };
+  const tenWays = dayCopy(day, "tenWays") as { enabled?: boolean; cta?: string; heading?: string; lines?: string[] };
+  // Default ON unless admin explicitly sets enabled=false. Empty array also disables.
+  const tenWaysLines = (Array.isArray(tenWays.lines) && tenWays.lines.length > 0)
+    ? tenWays.lines
+    : [...TEN_WAYS_DEFAULT];
+  const tenWaysOn = tenWays.enabled !== false && tenWaysLines.length > 0;
+  const tenWaysCta = tenWays.cta || "ten ways I'm noticing you";
+  const tenWaysHeading = tenWays.heading || "ten ways I'm noticing you";
+  const [tenWaysOpen, setTenWaysOpen] = useState(false);
   const [isOpened, setIsOpened] = useState(() => {
     try { return localStorage.getItem(`envelope-opened-${day.slug}`) === "1"; }
     catch { return false; }
@@ -763,6 +854,25 @@ function BirthdayLayout({ day }: { day: ApiDay }) {
       {(day.gallery ?? []).length > 0 && (
         <PolaroidGallery items={day.gallery ?? []} prompt={dayCopy(day, "gallery").prompt} />
       )}
+
+      {tenWaysOn && (
+        <div className="px-5 sm:px-10 max-w-3xl mx-auto pb-2">
+          <button
+            type="button"
+            className="btn-pill mt-4"
+            onClick={() => setTenWaysOpen(true)}
+          >
+            {tenWaysCta}
+            <span aria-hidden> →</span>
+          </button>
+        </div>
+      )}
+      <TenWaysModal
+        open={tenWaysOpen}
+        onClose={() => setTenWaysOpen(false)}
+        lines={tenWaysLines}
+        heading={tenWaysHeading}
+      />
 
       <div className="px-5 sm:px-10 max-w-3xl mx-auto pb-4">
         <div className="font-serif italic text-2xl">{day.signoff}</div>

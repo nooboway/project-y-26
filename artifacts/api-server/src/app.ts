@@ -36,6 +36,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// No-store on every API response (Vercel sets this via vercel.json too,
+// but Render and direct hits don't honor that — middleware covers both).
+app.use("/api", (_req: Request, res: Response, next: NextFunction) => {
+  res.setHeader("Cache-Control", "no-store, max-age=0");
+  next();
+});
+
 app.use("/api", router);
 
 export default app;

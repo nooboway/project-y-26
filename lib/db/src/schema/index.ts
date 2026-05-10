@@ -23,6 +23,8 @@ export type DayCopy = {
   drafts?:    { heading?: string };
   whyYou?:   { heading?: string; subhead?: string };
   terminal?:  { boot?: string[]; commands?: { name: string; response: string }[] };
+  notes?:     { app?: string; folder?: string; date?: string; title?: string };
+  tenWays?:   { enabled?: boolean; cta?: string; heading?: string; lines?: string[] };
 };
 
 export const siteConfigTable = pgTable("site_config", {
