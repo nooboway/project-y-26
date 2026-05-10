@@ -24,6 +24,11 @@ setStartupGate(ready);
 const frontendDistPath = path.resolve(__dirname, "../../../artifacts/for-yin/dist/public");
 app.use(express.static(frontendDistPath));
 
+// Unknown /api/* routes get a real 404 (not the SPA fallback below).
+app.use("/api", (_req: Request, res: Response) => {
+  res.status(404).json({ error: "Not Found" });
+});
+
 // Fallback all other GET requests to the React app (client-side routing)
 app.get(/(.*)/, (req: Request, res: Response) => {
   res.sendFile(path.join(frontendDistPath, "index.html"));
