@@ -24,7 +24,7 @@ router.get("/days", async (_req: Request, res: Response): Promise<void> => {
   const now = new Date();
   const nowMs = now.getTime();
   const { isAftermath, currentDayIndex } = computeDayIndex(
-    site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
+    site.startDate, site.birthdayDate, site.unlockOverride, days, now,
   );
 
   const summaries = days.map((d) => {
@@ -65,7 +65,7 @@ router.get("/days/:slug", async (req: Request, res: Response): Promise<void> => 
   const now = new Date();
   const nowMs = now.getTime();
   const { currentDayIndex, isAftermath } = computeDayIndex(
-    site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
+    site.startDate, site.birthdayDate, site.unlockOverride, days, now,
   );
   const [day] = await db.select().from(daysTable).where(eq(daysTable.slug, slug));
   if (!day) {
@@ -123,7 +123,7 @@ router.post("/days/:slug/seen", async (req: Request, res: Response): Promise<voi
   const now = new Date();
   const nowMs = now.getTime();
   const { currentDayIndex, isAftermath } = computeDayIndex(
-    site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
+    site.startDate, site.birthdayDate, site.unlockOverride, days, now,
   );
   const unlockTime = (existing as any).unlockTime ?? "00:00";
   const unlocked = isDayUnlocked(site, { index: existing.index, unlockTime }, { currentDayIndex, isAftermath }, nowMs);

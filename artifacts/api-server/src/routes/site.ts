@@ -13,7 +13,7 @@ router.get("/site", async (_req: any, res: any): Promise<void> => {
   const days = await loadDays();
   const now = new Date();
   const { currentDayIndex, isBirthday, isAftermath, secondsUntilBirthday } =
-    computeDayIndex(site.startDate, site.birthdayDate, site.unlockOverride, days.length, now);
+    computeDayIndex(site.startDate, site.birthdayDate, site.unlockOverride, days, now);
 
   const data = {
     title: site.title,

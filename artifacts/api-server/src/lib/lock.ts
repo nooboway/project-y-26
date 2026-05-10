@@ -46,11 +46,27 @@ export function dayUnlockDateIso(
   return new Date(dayUnlockDatetimeMs(startDateIso, dayIndex, unlockTime)).toISOString();
 }
 
+/**
+ * Count how many days are currently unlocked based on each day's per-day
+ * unlock datetime. This is the SAME logic used by isDayUnlocked() — keeping
+ * them aligned ensures the "X/Y unlocked" tag and the per-card unlocked flag
+ * never disagree.
+ */
+function countNaturallyUnlocked(
+  startDateIso: string,
+  days: { index: number; unlockTime?: string | null }[],
+  nowMs: number,
+): number {
+  return days.filter((d) =>
+    nowMs >= dayUnlockDatetimeMs(startDateIso, d.index, d.unlockTime ?? "00:00")
+  ).length;
+}
+
 export function computeDayIndex(
   startDateIso: string,
   birthdayIso: string,
   unlockOverride: number,
-  totalDays: number,
+  daysOrTotal: number | { index: number; unlockTime?: string | null }[],
   now: Date,
 ): {
   currentDayIndex: number;
@@ -58,9 +74,19 @@ export function computeDayIndex(
   isAftermath: boolean;
   secondsUntilBirthday: number;
 } {
+  // Backwards-compat: callers may pass either the days array (preferred)
+  // or just totalDays as a number. With just a number we fall back to
+  // calendar-day math which can disagree with per-day datetime checks
+  // when startDate/birthdayDate aren't exactly totalDays-1 apart.
+  const isArray = Array.isArray(daysOrTotal);
+  const totalDays = isArray ? daysOrTotal.length : daysOrTotal;
+  const days = isArray ? daysOrTotal : null;
+  const nowMs = now.getTime();
+  const bday = startOfUtcDay(new Date(birthdayIso));
+  const today = startOfUtcDay(now);
+
   // Manual override — explicit admin-set index bypasses all date logic.
-  // Guard: clamp to valid range so a stale override value can't unlock
-  // more days than exist or accidentally set aftermath permanently.
+  // Clamp so a stale override can't unlock more days than exist.
   if (unlockOverride && unlockOverride > 0) {
     const idx = Math.min(Math.max(unlockOverride, 1), totalDays + 1);
     return {
@@ -71,23 +97,24 @@ export function computeDayIndex(
     };
   }
 
-  const bday = startOfUtcDay(new Date(birthdayIso));
-  const today = startOfUtcDay(now);
-  const start = startOfUtcDay(new Date(startDateIso));
-
   let idx: number;
-  if (today < start) {
-    idx = 0;
-  } else if (today > bday) {
+  if (today > bday) {
     idx = totalDays + 1; // aftermath
-  } else if (today === bday) {
-    idx = totalDays; // birthday day
+  } else if (days) {
+    // Preferred path — count exactly what isDayUnlocked() would unlock.
+    idx = countNaturallyUnlocked(startDateIso, days, nowMs);
   } else {
-    const dayCountFromStart = Math.floor((today - start) / MS_PER_DAY) + 1;
-    idx = Math.min(Math.max(dayCountFromStart, 1), totalDays - 1);
+    // Fallback — old calendar math, may disagree with per-day check
+    const start = startOfUtcDay(new Date(startDateIso));
+    if (today < start) idx = 0;
+    else if (today === bday) idx = totalDays;
+    else {
+      const dayCountFromStart = Math.floor((today - start) / MS_PER_DAY) + 1;
+      idx = Math.min(Math.max(dayCountFromStart, 1), totalDays - 1);
+    }
   }
 
-  const secondsUntilBirthday = Math.max(0, Math.floor((bday - now.getTime()) / 1000));
+  const secondsUntilBirthday = Math.max(0, Math.floor((bday - nowMs) / 1000));
 
   return {
     currentDayIndex: idx,
