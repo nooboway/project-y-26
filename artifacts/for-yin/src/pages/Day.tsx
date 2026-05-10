@@ -613,7 +613,7 @@ function VoiceMemoLayout({ day }: { day: ApiDay }) {
         </div>
         <h1 className="font-display text-6xl mb-4 uppercase">{day.title}</h1>
         <p className="font-serif italic text-xl mb-10 opacity-70 whitespace-pre-wrap">{day.body}</p>
-        <VoiceNoteBlock url={day.voiceNoteUrl} />
+        <VoiceNoteBlock url={day.voiceNoteUrl} copy={dayCopy(day, "voiceNote")} />
         <div className="mt-12 font-serif italic text-xl">{day.signoff}</div>
       </div>
       <SongBlock day={day} />

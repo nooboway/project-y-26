@@ -64,7 +64,7 @@ router.get("/days/:slug", async (req: Request, res: Response): Promise<void> => 
   const days = await loadDays();
   const now = new Date();
   const nowMs = now.getTime();
-  const { isAftermath } = computeDayIndex(
+  const { currentDayIndex, isAftermath } = computeDayIndex(
     site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
   );
   const [day] = await db.select().from(daysTable).where(eq(daysTable.slug, slug));
@@ -109,6 +109,7 @@ router.get("/days/:slug", async (req: Request, res: Response): Promise<void> => 
     scratchCards: JSON.parse((day as any).scratchCards || "[]"),
     slides: JSON.parse((day as any).slides || "[]"),
     audioUrl: day.audioUrl ?? "",
+    copy: (day as any).copy ?? {},
   }));
 });
 
@@ -121,7 +122,7 @@ router.post("/days/:slug/seen", async (req: Request, res: Response): Promise<voi
   const days = await loadDays();
   const now = new Date();
   const nowMs = now.getTime();
-  const { isAftermath } = computeDayIndex(
+  const { currentDayIndex, isAftermath } = computeDayIndex(
     site.startDate, site.birthdayDate, site.unlockOverride, days.length, now,
   );
   const unlockTime = (existing as any).unlockTime ?? "00:00";
