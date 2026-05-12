@@ -1,5 +1,5 @@
 import express, { Request, Response } from "express";
-import { eq } from "@workspace/db";
+import { eq, sql } from "@workspace/db";
 import crypto from "node:crypto";
 import { db, siteConfigTable, daysTable } from "@workspace/db";
 import {
@@ -190,6 +190,79 @@ router.put("/admin/days/:slug", requireAdmin, async (req: Request, res: Response
     audioUrl: updated.audioUrl ?? "",
     copy: updated.copy,
   }));
+});
+
+// Music resolver — paste any YouTube / SoundCloud / Spotify / direct URL,
+// returns the canonical embed info and title/artist via oEmbed.
+router.get("/admin/resolve-music", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const raw = String((req.query as any).url ?? "").trim();
+  if (!raw) { res.status(400).json({ error: "Missing url query param" }); return; }
+
+  // Detect provider + extract IDs
+  const ytIdMatch = raw.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/|music\.youtube\.com\/watch\?v=)([A-Za-z0-9_-]{11})/);
+  const ytBareMatch = /^[A-Za-z0-9_-]{11}$/.test(raw);
+  const isSoundcloud = /soundcloud\.com\//.test(raw);
+  const spotifyMatch = raw.match(/(?:open\.spotify\.com|spotify:)(?:\/?)(track|album|playlist|episode|show)[/:]([A-Za-z0-9]+)/);
+
+  let provider: string | null = null;
+  let oembedUrl: string | null = null;
+  let youtubeId: string | undefined;
+  let spotifyEmbed: { kind: string; id: string } | undefined;
+
+  if (ytIdMatch || ytBareMatch) {
+    provider = "youtube";
+    youtubeId = ytIdMatch ? ytIdMatch[1] : raw;
+    oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${youtubeId}`)}&format=json`;
+  } else if (isSoundcloud) {
+    provider = "soundcloud";
+    oembedUrl = `https://soundcloud.com/oembed?format=json&url=${encodeURIComponent(raw)}`;
+  } else if (spotifyMatch) {
+    provider = "spotify";
+    spotifyEmbed = { kind: spotifyMatch[1], id: spotifyMatch[2] };
+    oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(raw)}`;
+  } else if (/\.(mp3|m4a|wav|ogg|flac|aac)(\?|$)/i.test(raw)) {
+    provider = "direct";
+  }
+
+  let meta: any = null;
+  if (oembedUrl) {
+    try {
+      const r = await fetch(oembedUrl, { headers: { "User-Agent": "project-y-26/1.0" } });
+      if (r.ok) meta = await r.json();
+    } catch { /* ignore — return what we have */ }
+  }
+
+  res.json({
+    provider,
+    youtubeId,
+    spotifyEmbed,
+    title: meta?.title ?? "",
+    author: meta?.author_name ?? "",
+    thumbnail: meta?.thumbnail_url ?? "",
+    embedHtml: meta?.html ?? "",
+    rawUrl: raw,
+  });
+});
+
+// Reset per-day stats (openedAt + replyText + replyAt). Use to clear test
+// data before a real field deployment. Optional `slug` body to scope to one
+// day, otherwise resets all days.
+router.post("/admin/reset-stats", requireAdmin, async (req: Request, res: Response): Promise<void> => {
+  const slug = typeof req.body?.slug === "string" ? req.body.slug : null;
+  if (slug) {
+    const [row] = await db.update(daysTable)
+      .set({ openedAt: null, replyText: "", replyAt: null })
+      .where(eq(daysTable.slug, slug))
+      .returning({ slug: daysTable.slug });
+    if (!row) { res.status(404).json({ error: "Day not found" }); return; }
+    res.json({ ok: true, scope: "day", slug, count: 1 });
+    return;
+  }
+  const rows = await db.update(daysTable)
+    .set({ openedAt: null, replyText: "", replyAt: null })
+    .where(sql`true`)
+    .returning({ slug: daysTable.slug });
+  res.json({ ok: true, scope: "all", count: rows.length });
 });
 
 export default router;

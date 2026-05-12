@@ -38,6 +38,14 @@ export default function Cover() {
   const isBirthday = site.isBirthday;
 
   const copy = (site as any).copy ?? {};
+  // Interpolate {recipientName}, {senderName}, {title} into any copy string.
+  const tmpl = (s: string | undefined) =>
+    typeof s === "string"
+      ? s
+        .replace(/\{recipientName\}/g, site.recipientName)
+        .replace(/\{senderName\}/g, site.senderName)
+        .replace(/\{title\}/g, site.title)
+      : s;
   const heroCopy = { ...SITE_COPY_TEMPLATE.hero, ...(copy.hero ?? {}) };
   const labelsCopy = { ...SITE_COPY_TEMPLATE.labels, ...(copy.labels ?? {}) };
   const buttonsCopy = { ...SITE_COPY_TEMPLATE.buttons, ...(copy.buttons ?? {}) };
@@ -45,9 +53,10 @@ export default function Cover() {
   const coverCopy = { ...SITE_COPY_TEMPLATE.cover, ...(copy.cover ?? {}) };
   const countdownCopy = { ...SITE_COPY_TEMPLATE.countdown, ...(copy.countdown ?? {}) };
 
-  const stateLabel = isBirthday ? labelsCopy.birthday : isAftermath ? labelsCopy.aftermath : labelsCopy.preBirthday;
-  const stateButton = isBirthday ? buttonsCopy.birthday : isAftermath ? buttonsCopy.aftermath : buttonsCopy.preBirthday;
-  const stateBand = isBirthday ? "live · today" : isAftermath ? "after the morning" : (countdownCopy.label ?? "until morning");
+  const recipient = (site.recipientName ?? "Yin").toUpperCase();
+  const stateLabel = tmpl(isBirthday ? labelsCopy.birthday : isAftermath ? labelsCopy.aftermath : labelsCopy.preBirthday);
+  const stateButton = tmpl(isBirthday ? buttonsCopy.birthday : isAftermath ? buttonsCopy.aftermath : buttonsCopy.preBirthday);
+  const stateBand = tmpl(isBirthday ? "live · today" : isAftermath ? "after the morning" : (countdownCopy.label ?? "until morning"));
 
   const handleOpen = () => {
     if (!today) return;
@@ -86,11 +95,11 @@ export default function Cover() {
               {heroCopy.lineTwo || SITE_COPY_TEMPLATE.hero.lineTwo}
             </span>
             <br />
-            <span style={{ color: "var(--ink)" }}>{heroCopy.lineThree || SITE_COPY_TEMPLATE.hero.lineThree}</span>
+            <span style={{ color: "var(--ink)" }}>{tmpl(heroCopy.lineThree) || recipient + "."}</span>
           </div>
 
           <p className="font-serif italic text-xl sm:text-2xl mt-6 max-w-md leading-snug" style={{ color: "var(--mauve)" }}>
-            {heroCopy.subtitle?.replace(/\{senderName\}/g, site.senderName) || `from ${site.senderName}, slowly. an unbroken letter, opened one day at a time.`}
+            {tmpl(heroCopy.subtitle) || `from ${site.senderName}, slowly. an unbroken letter, opened one day at a time.`}
           </p>
 
           <div className="flex flex-wrap items-center gap-3 mt-8">
@@ -204,9 +213,9 @@ export default function Cover() {
       <Ticker />
 
       <footer className="px-5 sm:px-10 py-12 flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4">
-        <div className="font-display outline-text text-6xl sm:text-9xl leading-none">FOR&nbsp;YIN</div>
+        <div className="font-display outline-text text-6xl sm:text-9xl leading-none">FOR&nbsp;{recipient}</div>
         <div className="uppercase-mono opacity-60 text-right">
-          {footerCopy.tagline}<br/>
+          {tmpl(footerCopy.tagline)}<br/>
           {site.coordinatesPlace}
         </div>
       </footer>

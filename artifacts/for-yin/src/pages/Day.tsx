@@ -115,15 +115,16 @@ function HeroBlock({ day, dark }: { day: ApiDay; dark?: boolean }) {
 type AudioSource =
   | { type: "youtube"; id: string }
   | { type: "soundcloud"; url: string }
+  | { type: "spotify"; kind: string; id: string }
   | { type: "direct"; url: string }
   | { type: "none" };
 
 function resolveAudio(day: ApiDay): AudioSource {
-  // Extract YouTube ID from either field — bare ID or full URL
+  // YouTube — accept bare 11-char ID OR any youtube/music.youtube/youtu.be URL
   function ytId(s?: string | null): string {
     if (!s?.trim()) return "";
     const m = s.trim().match(
-      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([A-Za-z0-9_-]{11})/
+      /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/|music\.youtube\.com\/watch\?v=)([A-Za-z0-9_-]{11})/
     );
     if (m) return m[1];
     if (/^[A-Za-z0-9_-]{11}$/.test(s.trim())) return s.trim();
@@ -135,6 +136,11 @@ function resolveAudio(day: ApiDay): AudioSource {
 
   const raw = day.audioUrl?.trim();
   if (!raw) return { type: "none" };
+
+  // Spotify — track / album / playlist / episode / show
+  const sp = raw.match(/(?:open\.spotify\.com|spotify:)(?:\/?)(track|album|playlist|episode|show)[/:]([A-Za-z0-9]+)/);
+  if (sp) return { type: "spotify", kind: sp[1], id: sp[2] };
+
   if (raw.includes("soundcloud.com")) return { type: "soundcloud", url: raw };
   if (raw.includes("dropbox.com")) return {
     type: "direct",
@@ -175,6 +181,18 @@ function SongBlock({ day }: { day: ApiDay }) {
           allow="autoplay"
           src={`https://w.soundcloud.com/player/?url=${encodeURIComponent(source.url)}&color=%23c47a6a&auto_play=false&hide_related=true&show_comments=false&show_user=false`}
           style={{ borderRadius: 4 }}
+        />
+      )}
+      {source.type === "spotify" && (
+        <iframe
+          title="spotify"
+          src={`https://open.spotify.com/embed/${source.kind}/${source.id}?utm_source=for-yin`}
+          width="100%"
+          height={source.kind === "track" ? 80 : 152}
+          frameBorder="0"
+          allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+          loading="lazy"
+          style={{ borderRadius: 12 }}
         />
       )}
       {source.type === "direct" && (
@@ -518,63 +536,99 @@ function ReplyForm({ slug, copy: copyProp }: { slug: string; copy?: any }) {
 
 function ScratchCard({ front, hidden }: { front: string; hidden: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [scratched, setScratched] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const drawingRef = useRef(false);
+  const initedRef = useRef(false);
 
+  // Paint the silver scratch surface. Re-runs if the canvas DOM dimensions
+  // change (e.g. responsive resize) so it always matches the rendered box.
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    ctx.fillStyle = "#c0c0c0";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    for (let i = 0; i < 1000; i++) {
-      ctx.fillStyle = `rgba(0,0,0,${Math.random() * 0.1})`;
-      ctx.fillRect(Math.random() * canvas.width, Math.random() * canvas.height, 2, 2);
-    }
-
-    let isDrawing = false;
-    const scratch = (x: number, y: number) => {
-      ctx.globalCompositeOperation = "destination-out";
-      ctx.beginPath();
-      ctx.arc(x, y, 25, 0, Math.PI * 2);
-      ctx.fill();
+    const paint = () => {
+      const canvas = canvasRef.current;
+      const wrap = wrapRef.current;
+      if (!canvas || !wrap) return;
+      const rect = wrap.getBoundingClientRect();
+      if (rect.width < 2 || rect.height < 2) return;
+      const dpr = Math.max(1, window.devicePixelRatio || 1);
+      const w = Math.round(rect.width * dpr);
+      const h = Math.round(rect.height * dpr);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.globalCompositeOperation = "source-over";
+      ctx.fillStyle = "#c0c0c0";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(0,0,0,0.08)";
+      for (let i = 0; i < 2000; i++) {
+        ctx.fillRect(
+          Math.random() * canvas.width,
+          Math.random() * canvas.height,
+          Math.max(1, dpr), Math.max(1, dpr),
+        );
+      }
+      initedRef.current = true;
     };
-
-    const handleStart = (e: any) => { isDrawing = true; handleMove(e); };
-    const handleEnd = () => { isDrawing = false; };
-    const handleMove = (e: any) => {
-      if (!isDrawing) return;
-      const rect = canvas.getBoundingClientRect();
-      const x = ((e.clientX || (e.touches && e.touches[0].clientX)) - rect.left) * (canvas.width / rect.width);
-      const y = ((e.clientY || (e.touches && e.touches[0].clientY)) - rect.top) * (canvas.height / rect.height);
-      scratch(x, y);
-    };
-
-    canvas.addEventListener("mousedown", handleStart);
-    canvas.addEventListener("touchstart", handleStart);
-    window.addEventListener("mouseup", handleEnd);
-    window.addEventListener("touchend", handleEnd);
-    canvas.addEventListener("mousemove", handleMove);
-    canvas.addEventListener("touchmove", handleMove);
-
-    return () => {
-      canvas.removeEventListener("mousedown", handleStart);
-      canvas.removeEventListener("touchstart", handleStart);
-      window.removeEventListener("mouseup", handleEnd);
-      window.removeEventListener("touchend", handleEnd);
-      canvas.removeEventListener("mousemove", handleMove);
-      canvas.removeEventListener("touchmove", handleMove);
-    };
+    paint();
+    // ResizeObserver re-paints on layout changes (covers the "first card
+    // mounts before layout settled" race that caused the prior bug).
+    const wrap = wrapRef.current;
+    if (!wrap || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => paint());
+    ro.observe(wrap);
+    return () => ro.disconnect();
   }, []);
 
+  function scratchAt(clientX: number, clientY: number) {
+    const canvas = canvasRef.current;
+    if (!canvas || !initedRef.current) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width < 2) return;
+    const x = ((clientX - rect.left) / rect.width) * canvas.width;
+    const y = ((clientY - rect.top) / rect.height) * canvas.height;
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    ctx.globalCompositeOperation = "destination-out";
+    ctx.beginPath();
+    ctx.arc(x, y, 28 * dpr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   return (
-    <div className="scratch-card">
+    <div className="scratch-card" ref={wrapRef}>
       <div className="scratch-content">
         <div className="uppercase-mono opacity-50 mb-2">{front}</div>
         <div className="font-serif text-xl">{hidden}</div>
       </div>
-      <canvas ref={canvasRef} width={400} height={300} className="scratch-canvas" />
+      <canvas
+        ref={canvasRef}
+        className="scratch-canvas"
+        onPointerDown={(e) => {
+          e.preventDefault();
+          (e.target as Element).setPointerCapture?.(e.pointerId);
+          drawingRef.current = true;
+          scratchAt(e.clientX, e.clientY);
+        }}
+        onPointerMove={(e) => {
+          if (!drawingRef.current) return;
+          scratchAt(e.clientX, e.clientY);
+        }}
+        onPointerUp={(e) => {
+          drawingRef.current = false;
+          try { (e.target as Element).releasePointerCapture?.(e.pointerId); } catch { /* noop */ }
+        }}
+        onPointerCancel={() => { drawingRef.current = false; }}
+        onPointerLeave={(e) => {
+          if (!drawingRef.current) return;
+          // keep drawing while captured
+          if (!(e.target as Element).hasPointerCapture?.(e.pointerId)) {
+            drawingRef.current = false;
+          }
+        }}
+      />
     </div>
   );
 }

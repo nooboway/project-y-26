@@ -102,10 +102,11 @@ export function PageFrame({ children, dark = false }: { children: ReactNode; dar
 
 export function MastheadBar({ right }: { right?: ReactNode }) {
   const { data: site } = useGetSite({ query: { queryKey: getGetSiteQueryKey() } });
+  const recipient = (site?.recipientName ?? "Yin").toUpperCase();
   return (
     <div className="flex items-center justify-between px-5 sm:px-10 pt-6">
       <Link href="/" className="font-display text-2xl tracking-wide hover:opacity-70 transition">
-        FOR <span style={{ color: "var(--rose-deep)" }}>YIN</span>
+        FOR <span style={{ color: "var(--rose-deep)" }}>{recipient}</span>
       </Link>
       <div className="flex items-center gap-4">
         {site && <CoordStamp coords={site.coordinates} place={site.coordinatesPlace} />}

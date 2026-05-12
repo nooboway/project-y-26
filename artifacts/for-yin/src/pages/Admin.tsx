@@ -183,6 +183,81 @@ function LiveEditor({ onChanged }: { onChanged: () => void }) {
   );
 }
 
+type MusicPicked = {
+  audioUrl?: string;
+  youtubeId?: string;
+  songTitle?: string;
+  songArtist?: string;
+};
+
+function MusicPicker({
+  audioUrl, songTitle, songArtist, onChange,
+}: {
+  audioUrl: string;
+  songTitle: string;
+  songArtist: string;
+  onChange: (p: MusicPicked) => void;
+}) {
+  const [url, setUrl] = useState(audioUrl);
+  const [busy, setBusy] = useState(false);
+  const [provider, setProvider] = useState<string>("");
+  const [err, setErr] = useState("");
+  useEffect(() => { setUrl(audioUrl); }, [audioUrl]);
+
+  async function resolve(raw: string) {
+    if (!raw.trim()) return;
+    setBusy(true); setErr(""); setProvider("");
+    try {
+      const r = await fetch(`/api/admin/resolve-music?url=${encodeURIComponent(raw.trim())}`, {
+        headers: adminHeaders(),
+      });
+      const j = await r.json();
+      if (!r.ok) { setErr(j?.error || "resolve failed"); return; }
+      setProvider(j.provider || "");
+      // For YouTube, store the canonical 11-char ID; for everything else,
+      // keep the full URL in audioUrl.
+      const next: MusicPicked = {};
+      if (j.provider === "youtube" && j.youtubeId) {
+        next.youtubeId = j.youtubeId;
+        next.audioUrl = raw.trim();
+      } else {
+        next.audioUrl = raw.trim();
+        next.youtubeId = "";
+      }
+      if (j.title) next.songTitle = String(j.title);
+      if (j.author) next.songArtist = String(j.author);
+      onChange(next);
+    } catch (e: any) {
+      setErr(e?.message ?? "resolve failed");
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <div className="border hairline p-4">
+      <div className="uppercase-mono opacity-70 mb-2">music · paste YouTube / SoundCloud / Spotify / direct MP3</div>
+      <div className="flex gap-2 flex-wrap items-end">
+        <input
+          className="field flex-1 min-w-[260px]"
+          value={url}
+          onChange={(e: any) => setUrl(e.target.value)}
+          placeholder="https://youtu.be/… or open.spotify.com/track/… or soundcloud.com/…"
+        />
+        <button type="button" className="btn-pill" disabled={busy || !url.trim()} onClick={() => resolve(url)}>
+          {busy ? "resolving…" : "auto-fill"}
+        </button>
+      </div>
+      {provider && <div className="uppercase-mono opacity-60 mt-2">detected: {provider}</div>}
+      {err && <div className="uppercase-mono mt-2" style={{ color: "var(--rose-dust)" }}>{err}</div>}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+        <label><div className="uppercase-mono opacity-70 mb-1">song title</div>
+          <input className="field" value={songTitle} onChange={(e: any) => onChange({ songTitle: e.target.value })} /></label>
+        <label><div className="uppercase-mono opacity-70 mb-1">song artist</div>
+          <input className="field" value={songArtist} onChange={(e: any) => onChange({ songArtist: e.target.value })} /></label>
+      </div>
+    </div>
+  );
+}
+
 function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
   const initial: ApiDay = {
     ...day,
@@ -311,12 +386,19 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           <input className="field" value={d.pullQuote ?? ""} onChange={(e: any) => set({ pullQuote: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">signoff</div>
           <input className="field" value={d.signoff ?? ""} onChange={(e: any) => set({ signoff: e.target.value })} /></label>
-        <label><div className="uppercase-mono opacity-70 mb-1">song title</div>
-          <input className="field" value={d.songTitle ?? ""} onChange={(e: any) => set({ songTitle: e.target.value })} /></label>
-        <label><div className="uppercase-mono opacity-70 mb-1">song artist</div>
-          <input className="field" value={d.songArtist ?? ""} onChange={(e: any) => set({ songArtist: e.target.value })} /></label>
-        <label><div className="uppercase-mono opacity-70 mb-1">youtube id</div>
-          <input className="field" value={d.youtubeId ?? ""} onChange={(e: any) => set({ youtubeId: e.target.value })} /></label>
+        <div className="sm:col-span-2">
+          <MusicPicker
+            audioUrl={d.audioUrl ?? d.youtubeId ?? ""}
+            songTitle={d.songTitle ?? ""}
+            songArtist={d.songArtist ?? ""}
+            onChange={(p) => set({
+              audioUrl: p.audioUrl ?? d.audioUrl,
+              youtubeId: p.youtubeId ?? d.youtubeId,
+              songTitle: p.songTitle ?? d.songTitle,
+              songArtist: p.songArtist ?? d.songArtist,
+            })}
+          />
+        </div>
         <label>
           <div className="uppercase-mono opacity-70 mb-1">unlock time (GMT+1, HH:MM)</div>
           <input
@@ -493,6 +575,31 @@ function SeenPanel() {
   const items = seen.data ?? [];
   const opened = items.filter((i: any) => i.openedAt);
   const replied = items.filter((i: any) => i.replyText);
+  const [resetting, setResetting] = useState<string | null>(null);
+  const qc = useQueryClient();
+  const resetStats = async (slug?: string) => {
+    const label = slug ?? "ALL";
+    const msg = slug
+      ? `Reset opened/reply stats for "${slug}"? (cannot undo)`
+      : "Reset opened/reply stats for ALL DAYS? (cannot undo)";
+    if (!window.confirm(msg)) return;
+    setResetting(label);
+    try {
+      const r = await fetch("/api/admin/reset-stats", {
+        method: "POST",
+        headers: { ...adminHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify(slug ? { slug } : {}),
+      });
+      if (!r.ok) throw new Error("reset failed");
+      seen.refetch();
+      qc.invalidateQueries({ queryKey: getAdminListSeenQueryKey() });
+    } catch (e: any) {
+      window.alert("Reset failed: " + (e?.message ?? "unknown error"));
+    } finally {
+      setResetting(null);
+    }
+  };
+
   return (
     <Section title="opens · replies (cross-device, polled every 30s)">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
@@ -512,6 +619,20 @@ function SeenPanel() {
               : "—"}
           </div>
         </div>
+      </div>
+      <div className="flex gap-2 flex-wrap mb-5">
+        <button
+          type="button"
+          className="btn-pill"
+          style={{ borderColor: "var(--rose-deep)", color: "var(--rose-deep)" }}
+          disabled={resetting !== null}
+          onClick={() => resetStats()}
+        >
+          {resetting === "ALL" ? "resetting all…" : "reset ALL stats"}
+        </button>
+        <span className="uppercase-mono opacity-50 self-center text-[10px]">
+          clears openedAt + replyText + replyAt across every day
+        </span>
       </div>
       <div className="space-y-3">
         {items.map((it: any) => (
@@ -533,6 +654,16 @@ function SeenPanel() {
             <div className="uppercase-mono opacity-70 text-right">
               {it.openedAt ? `opened · ${new Date(it.openedAt).toLocaleString()}` : "not opened"}
               {it.replyAt && <div>replied · {new Date(it.replyAt).toLocaleString()}</div>}
+              {(it.openedAt || it.replyText) && (
+                <button
+                  type="button"
+                  className="uppercase-mono mt-2 text-[10px] opacity-60 hover:opacity-100 underline"
+                  disabled={resetting !== null}
+                  onClick={() => resetStats(it.slug)}
+                >
+                  {resetting === it.slug ? "resetting…" : "reset this day"}
+                </button>
+              )}
             </div>
           </div>
         ))}
