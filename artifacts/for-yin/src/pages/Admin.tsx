@@ -214,6 +214,7 @@ function MusicPicker({
       const j = await r.json();
       if (!r.ok) { setErr(j?.error || "resolve failed"); return; }
       setProvider(j.provider || "");
+      if (j.warning) setErr(j.warning);
       // For YouTube, store the canonical 11-char ID; for everything else,
       // keep the full URL in audioUrl.
       const next: MusicPicked = {};

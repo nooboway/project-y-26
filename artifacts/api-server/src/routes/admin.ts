@@ -225,11 +225,18 @@ router.get("/admin/resolve-music", requireAdmin, async (req: Request, res: Respo
   }
 
   let meta: any = null;
+  let oembedError: string | undefined;
   if (oembedUrl) {
     try {
-      const r = await fetch(oembedUrl, { headers: { "User-Agent": "project-y-26/1.0" } });
-      if (r.ok) meta = await r.json();
-    } catch { /* ignore — return what we have */ }
+      const r = await fetch(oembedUrl, { headers: { "User-Agent": "Mozilla/5.0 (compatible; project-y-26/1.0)" } });
+      if (r.ok) {
+        meta = await r.json();
+      } else {
+        oembedError = `${r.status} ${r.statusText}: ${provider} oEmbed not available (video may be private, deleted, or not embeddable)`;
+      }
+    } catch (e: any) {
+      oembedError = `oEmbed fetch failed: ${e?.message ?? "network error"}`;
+    }
   }
 
   res.json({
@@ -241,6 +248,7 @@ router.get("/admin/resolve-music", requireAdmin, async (req: Request, res: Respo
     thumbnail: meta?.thumbnail_url ?? "",
     embedHtml: meta?.html ?? "",
     rawUrl: raw,
+    ...(oembedError ? { warning: oembedError } : {}),
   });
 });
 
