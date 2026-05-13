@@ -82,6 +82,7 @@ function SiteEditor({ onChanged }: { onChanged: () => void }) {
   const { data, refetch } = useAdminGetSite({ request: { headers }, query: { queryKey: getAdminGetSiteQueryKey() } });
   const update = useAdminUpdateSite({ request: { headers } });
   const [form, setForm] = useState<any>(null);
+  const [savedText, setSavedText] = useState("");
   useEffect(() => { if (data) setForm({ ...(data as any) }); }, [data]);
   if (!form) return <Section title="site"><div className="opacity-60">loading…</div></Section>;
   const F = (k: string, label: string, type: "text" | "number" | "color" = "text", small = false) => (
@@ -144,9 +145,9 @@ function SiteEditor({ onChanged }: { onChanged: () => void }) {
                 unlockOverride: form.unlockOverride,
                 copy: form.copy,
               },
-            }, { onSuccess: () => { refetch(); onChanged(); } });
+            }, { onSuccess: () => { refetch(); onChanged(); setSavedText("saved!"); setTimeout(() => setSavedText(""), 2000); } });
           }}>
-          {update.isPending ? "saving…" : "save site"}
+          {update.isPending ? "saving…" : savedText || "save site"}
         </button>
         <span className="uppercase-mono opacity-60">issue {form.unlockOverride > 0 ? `manually unlocked to ${form.unlockOverride}` : "auto by date"}</span>
       </div>
@@ -167,6 +168,7 @@ function LiveEditor({ onChanged }: { onChanged: () => void }) {
   const headers = adminHeaders();
   const update = useAdminUpdateLive({ request: { headers } });
   const [text, setText] = useState("");
+  const [savedText, setSavedText] = useState("");
   return (
     <Section title="live · ticker message (cross-device, polled every 60s)">
       <textarea className="field" rows={3} placeholder="thinking about you, in the cab, right now."
@@ -174,9 +176,9 @@ function LiveEditor({ onChanged }: { onChanged: () => void }) {
       <div className="mt-4">
         <button className="btn-solid" disabled={update.isPending || !text.trim()}
           onClick={async () => {
-            await update.mutateAsync({ data: { text } }, { onSuccess: () => { setText(""); onChanged(); } });
+            await update.mutateAsync({ data: { text } }, { onSuccess: () => { setText(""); onChanged(); setSavedText("broadcasted!"); setTimeout(() => setSavedText(""), 2000); } });
           }}>
-          {update.isPending ? "broadcasting…" : "broadcast"}
+          {update.isPending ? "broadcasting…" : savedText || "broadcast"}
         </button>
       </div>
     </Section>
@@ -283,6 +285,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
   const [d, setD] = useState<ApiDay>(initial);
   const headers = adminHeaders();
   const update = useAdminUpdateDay({ request: { headers } });
+  const [savedText, setSavedText] = useState("");
   useEffect(() => { setD(initial); }, [day.slug]); // eslint-disable-line
   const drafts: DraftItem[] = d.drafts ?? [];
   const reasons: string[] = d.reasons ?? [];
@@ -318,7 +321,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
         audioUrl: d.audioUrl ?? "",
         copy: (d as any).copy,
       } as any,
-    }, { onSuccess: () => onChanged() });
+    }, { onSuccess: () => { onChanged(); setSavedText("saved!"); setTimeout(() => setSavedText(""), 2000); } });
   };
 
   return (
@@ -558,7 +561,7 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
 
         <div className="sm:col-span-2 flex items-center gap-3">
           <button type="button" className="btn-solid" disabled={update.isPending} onClick={save}>
-            {update.isPending ? "saving…" : "save day"}
+            {update.isPending ? "saving…" : savedText || "save day"}
           </button>
           <span className="uppercase-mono opacity-60">{d.slug}</span>
         </div>

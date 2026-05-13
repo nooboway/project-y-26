@@ -63,8 +63,9 @@ export default function Cover() {
   const handleOpen = () => {
     if (!today) return;
     // Kick audio inside the user gesture so mobile browsers honor it.
-    if (today.youtubeId && !audio.currentId) {
-      audio.play(today.youtubeId);
+    const playUrl = today.audioUrl || today.youtubeId;
+    if (playUrl && !audio.currentId) {
+      audio.play(playUrl);
     }
     navigate(`/day/${today.slug}`);
   };
