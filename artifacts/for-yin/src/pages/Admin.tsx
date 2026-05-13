@@ -23,6 +23,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { adminHeaders, getAdminToken, setAdminToken } from "@/lib/admin";
+import { useAudio } from "@/lib/audio";
 import { MediaUpload } from '@/components/MediaUpload';
 import { CopyEditor } from "@/components/CopyEditor";
 import { SITE_COPY_TEMPLATE, DAY_COPY_TEMPLATES } from "@/lib/copyDefaults";
@@ -204,6 +205,7 @@ function MusicPicker({
   const [busy, setBusy] = useState(false);
   const [provider, setProvider] = useState<string>("");
   const [err, setErr] = useState("");
+  const audio = useAudio();
   useEffect(() => { setUrl(audioUrl); }, [audioUrl]);
 
   async function resolve(raw: string) {
@@ -248,6 +250,18 @@ function MusicPicker({
         <button type="button" className="btn-pill" disabled={busy || !url.trim()} onClick={() => resolve(url)}>
           {busy ? "resolving…" : "auto-fill"}
         </button>
+        {audioUrl && (
+          <button
+            type="button"
+            className="btn-pill"
+            onClick={() => {
+              if (audio.isPlaying && audio.currentId === audioUrl) audio.pause();
+              else audio.play(audioUrl);
+            }}
+          >
+            {audio.isPlaying && audio.currentId === audioUrl ? "stop test" : "test play"}
+          </button>
+        )}
       </div>
       {provider && <div className="uppercase-mono opacity-60 mt-2">detected: {provider}</div>}
       {err && <div className="uppercase-mono mt-2" style={{ color: "var(--rose-dust)" }}>{err}</div>}
@@ -411,12 +425,17 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             onUploaded={(r: any) => set({ heroImage: r.url })}
           />
           <input
-            className="field"
+            className="field mt-2"
             type="text"
             placeholder="or paste URL directly"
             value={d.heroImage ?? ""}
             onChange={(e: any) => set({ heroImage: e.target.value })}
           />
+          {d.heroImage && (
+            <div className="mt-3">
+              <img src={d.heroImage} alt="Hero Preview" className="w-full max-w-[120px] rounded object-cover aspect-square border hairline bg-black/10" />
+            </div>
+          )}
         </div>
         <label className="sm:col-span-2">
           <div className="flex items-center justify-between mb-1">
@@ -496,15 +515,17 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
         <div className="sm:col-span-2">
           <div className="uppercase-mono opacity-70 mb-2">drafts (for kind=drafts)</div>
           {drafts.map((dr: DraftItem, i: number) => (
-            <div key={i} className="flex items-start gap-2 mb-2">
-              <input className="field flex-1" value={dr.text}
+            <div key={i} className="flex flex-col sm:flex-row items-start sm:items-center gap-2 mb-3 p-2 border hairline bg-paper/30">
+              <input className="field flex-1 w-full sm:w-auto" value={dr.text}
                      onChange={(e: any) => set({ drafts: drafts.map((x, j) => j === i ? { ...x, text: e.target.value } : x) })} />
-              <label className="uppercase-mono flex items-center gap-2 px-2 py-2">
-                <input type="checkbox" checked={dr.crossed}
-                       onChange={(e: any) => set({ drafts: drafts.map((x, j) => j === i ? { ...x, crossed: e.target.checked } : x) })} />
-                crossed
-              </label>
-              <button type="button" className="btn-pill" onClick={() => set({ drafts: drafts.filter((_, j) => j !== i) })}>×</button>
+              <div className="flex items-center justify-between w-full sm:w-auto gap-2">
+                <label className="uppercase-mono flex items-center gap-2 px-2 py-2 cursor-pointer">
+                  <input type="checkbox" checked={dr.crossed}
+                         onChange={(e: any) => set({ drafts: drafts.map((x, j) => j === i ? { ...x, crossed: e.target.checked } : x) })} />
+                  crossed
+                </label>
+                <button type="button" className="btn-pill" onClick={() => set({ drafts: drafts.filter((_, j) => j !== i) })}>×</button>
+              </div>
             </div>
           ))}
           <button type="button" className="btn-pill mt-2" onClick={() => set({ drafts: [...drafts, { text: "", crossed: false }] })}>+ draft</button>
@@ -525,31 +546,43 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
         <div className="sm:col-span-2">
           <div className="uppercase-mono opacity-70 mb-2">gallery (for kind=gallery / birthday)</div>
           {gallery.map((g: GalleryImage, i: number) => (
-            <div key={i} className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4 p-3 border hairline bg-paper/30">
-              <div className="sm:col-span-1">
-                <MediaUpload
-                  accept="image/*"
-                  label={`Gallery photo ${i + 1}`}
-                  token={getAdminToken() ?? ""}
-                  currentUrl={g.url}
-                  onUploaded={(r: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: r.url } : x) })}
-                />
-                <input
-                  className="field"
-                  placeholder="or paste photo URL"
-                  value={g.url}
-                  onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: e.target.value } : x) })}
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <input className="field" placeholder="caption" value={g.caption}
-                       onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, caption: e.target.value } : x) })} />
-                <div className="flex gap-2">
-                  <select className="field" value={g.span}
-                          onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, span: e.target.value as unknown as GalleryImageSpan } : x) })}>
-                    <option value="s">s</option><option value="m">m</option><option value="l">l</option><option value="xl">xl</option>
-                  </select>
-                  <button type="button" className="btn-pill" onClick={() => set({ gallery: gallery.filter((_, j) => j !== i) })}>×</button>
+            <div key={i} className="flex flex-col sm:flex-row gap-4 mb-4 p-3 border hairline bg-paper/30">
+              {g.url && (
+                <div className="shrink-0 w-24 h-24">
+                  <img src={g.url} alt="Gallery item" className="w-full h-full object-cover rounded border hairline bg-black/10" />
+                </div>
+              )}
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div className="sm:col-span-1">
+                  <MediaUpload
+                    accept="image/*"
+                    label={`Gallery photo ${i + 1}`}
+                    token={getAdminToken() ?? ""}
+                    currentUrl={g.url}
+                    onUploaded={(r: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: r.url } : x) })}
+                  />
+                  <input
+                    className="field mt-2"
+                    placeholder="or paste photo URL"
+                    value={g.url}
+                    onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, url: e.target.value } : x) })}
+                  />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <input className="field" placeholder="caption" value={g.caption}
+                         onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, caption: e.target.value } : x) })} />
+                  <div className="flex gap-2">
+                    <select className="field flex-1" value={g.span}
+                            onChange={(e: any) => set({ gallery: gallery.map((x, j) => j === i ? { ...x, span: e.target.value as unknown as GalleryImageSpan } : x) })}>
+                      <option value="s">s</option><option value="m">m</option><option value="l">l</option><option value="xl">xl</option>
+                    </select>
+                    <button type="button" className="btn-pill px-2" title="Duplicate" onClick={() => {
+                      const newGallery = [...gallery];
+                      newGallery.splice(i + 1, 0, { ...g });
+                      set({ gallery: newGallery });
+                    }}>+</button>
+                    <button type="button" className="btn-pill px-2" title="Remove" onClick={() => set({ gallery: gallery.filter((_, j) => j !== i) })}>×</button>
+                  </div>
                 </div>
               </div>
             </div>
