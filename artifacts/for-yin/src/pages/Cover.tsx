@@ -39,13 +39,15 @@ export default function Cover() {
 
   const copy = (site as any).copy ?? {};
   // Interpolate {recipientName}, {senderName}, {title} into any copy string.
-  const tmpl = (s: string | undefined) =>
+  // Always returns a string (empty if input was nullish) so callsites can pass
+  // directly to props that require a string.
+  const tmpl = (s: string | undefined | null): string =>
     typeof s === "string"
       ? s
         .replace(/\{recipientName\}/g, site.recipientName)
         .replace(/\{senderName\}/g, site.senderName)
         .replace(/\{title\}/g, site.title)
-      : s;
+      : "";
   const heroCopy = { ...SITE_COPY_TEMPLATE.hero, ...(copy.hero ?? {}) };
   const labelsCopy = { ...SITE_COPY_TEMPLATE.labels, ...(copy.labels ?? {}) };
   const buttonsCopy = { ...SITE_COPY_TEMPLATE.buttons, ...(copy.buttons ?? {}) };
