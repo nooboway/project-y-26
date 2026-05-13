@@ -294,6 +294,21 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
   const slides: any[] = d.slides ?? [];
   const set = (patch: Partial<ApiDay>) => setD((p: ApiDay) => ({ ...p, ...patch }));
 
+  // Dirty tracking — detect unsaved changes
+  const isDirty = useMemo(() => JSON.stringify(d) !== JSON.stringify(initial), [d, initial]);
+
+  // Status badge
+  const unlockDateMs = new Date(day.unlockDate).getTime();
+  const nowMs = Date.now();
+  const isUnlocked = unlockDateMs <= nowMs;
+  const isToday = isUnlocked && unlockDateMs > nowMs - 86_400_000;
+  const statusLabel = isToday ? "today" : isUnlocked ? "live" : "locked";
+  const statusColor = isToday
+    ? "var(--rose-deep)"
+    : isUnlocked
+    ? "var(--accent)"
+    : "rgba(158,107,114,0.4)";
+
   const save = async () => {
     await update.mutateAsync({
       slug: d.slug,
@@ -325,13 +340,32 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
   };
 
   return (
-    <details className="border hairline mt-3" open={false}>
-      <summary className="cursor-pointer p-4 flex items-center justify-between">
-        <div>
-          <span className="uppercase-mono opacity-70 mr-3">{String(d.index).padStart(2, "0")} · {d.kind}</span>
+    <details className="border hairline mt-3 day-editor" open={false}>
+      <summary className="cursor-pointer p-4 flex items-center justify-between select-none">
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Unsaved dot */}
+          {isDirty && (
+            <span title="unsaved changes" style={{ color: "var(--rose-deep)", fontSize: 10 }}>●</span>
+          )}
+          <span className="uppercase-mono opacity-70">{String(d.index).padStart(2, "0")} · {d.kind}</span>
           <span className="font-serif italic text-xl">{d.title}</span>
+          {/* Status badge */}
+          <span className="uppercase-mono text-[9px] px-2 py-0.5 border" style={{ borderColor: statusColor, color: statusColor }}>
+            {statusLabel}
+          </span>
         </div>
-        <span className="uppercase-mono opacity-60">edit</span>
+        <div className="flex items-center gap-3">
+          {/* Preview link — stops click bubbling to <details> */}
+          <a
+            href={`/day/${d.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="uppercase-mono opacity-60 hover:opacity-100 transition"
+            style={{ fontSize: 10 }}
+          >↗ preview</a>
+          <span className="uppercase-mono opacity-60">edit</span>
+        </div>
       </summary>
       <div className="p-5 grid grid-cols-1 sm:grid-cols-2 gap-4 border-t hairline">
         <label><div className="uppercase-mono opacity-70 mb-1">title</div>
@@ -384,8 +418,13 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
             onChange={(e: any) => set({ heroImage: e.target.value })}
           />
         </div>
-        <label className="sm:col-span-2"><div className="uppercase-mono opacity-70 mb-1">body</div>
-          <textarea className="field" rows={8} value={d.body ?? ""} onChange={(e: any) => set({ body: e.target.value })} /></label>
+        <label className="sm:col-span-2">
+          <div className="flex items-center justify-between mb-1">
+            <span className="uppercase-mono opacity-70">body</span>
+            <span className="uppercase-mono opacity-40 text-[9px]">{(d.body ?? "").length} chars</span>
+          </div>
+          <textarea className="field" rows={8} value={d.body ?? ""} onChange={(e: any) => set({ body: e.target.value })} />
+        </label>
         <label><div className="uppercase-mono opacity-70 mb-1">pull quote</div>
           <input className="field" value={d.pullQuote ?? ""} onChange={(e: any) => set({ pullQuote: e.target.value })} /></label>
         <label><div className="uppercase-mono opacity-70 mb-1">signoff</div>
@@ -559,11 +598,19 @@ function DayEditor({ day, onChanged }: { day: ApiDay; onChanged: () => void }) {
           />
         </div>
 
-        <div className="sm:col-span-2 flex items-center gap-3">
-          <button type="button" className="btn-solid" disabled={update.isPending} onClick={save}>
-            {update.isPending ? "saving…" : savedText || "save day"}
-          </button>
-          <span className="uppercase-mono opacity-60">{d.slug}</span>
+        <div className="sm:col-span-2">
+          <div
+            className="flex items-center gap-3 py-3 px-4 mt-2 border-t hairline"
+            style={{ position: "sticky", bottom: 0, background: "var(--paper)", zIndex: 10 }}
+          >
+            <button type="button" className="btn-solid" disabled={update.isPending} onClick={save}>
+              {update.isPending ? "saving…" : savedText || (isDirty ? "save day ●" : "save day")}
+            </button>
+            <span className="uppercase-mono opacity-60">{d.slug}</span>
+            {savedText && (
+              <span className="uppercase-mono text-[10px]" style={{ color: "var(--rose-deep)" }}>✓ {savedText}</span>
+            )}
+          </div>
         </div>
       </div>
     </details>
@@ -727,6 +774,22 @@ export default function Admin() {
         <SeenPanel />
 
         <Section title="days">
+          <div className="flex gap-2 mb-4">
+            <button
+              type="button"
+              className="btn-pill"
+              onClick={() => {
+                document.querySelectorAll<HTMLDetailsElement>("details.day-editor").forEach((el) => { el.open = true; });
+              }}
+            >expand all</button>
+            <button
+              type="button"
+              className="btn-pill"
+              onClick={() => {
+                document.querySelectorAll<HTMLDetailsElement>("details.day-editor").forEach((el) => { el.open = false; });
+              }}
+            >collapse all</button>
+          </div>
           {days.data?.map((d: any) => <DayEditor key={d.slug} day={d} onChanged={invalidateAll} />)}
         </Section>
       </div>
