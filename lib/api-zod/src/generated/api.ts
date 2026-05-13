@@ -61,6 +61,7 @@ export const ListDaysResponseItem = zod.object({
   "isToday": zod.boolean(),
   "unlockDate": zod.string(),
   "youtubeId": zod.string(),
+  "audioUrl": zod.string(),
   "previewText": zod.string()
 })
 export const ListDaysResponse = zod.array(ListDaysResponseItem)

@@ -73,6 +73,7 @@ export interface DaySummary {
   isToday: boolean;
   unlockDate: string;
   youtubeId: string;
+  audioUrl: string;
   previewText: string;
 }
 

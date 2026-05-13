@@ -47,6 +47,7 @@ router.get("/days", async (_req: Request, res: Response): Promise<void> => {
       isToday: unlocked && d.index === currentDayIndex,
       unlockDate: dayUnlockDateIso(site.startDate, d.index, unlockTime),
       youtubeId: unlocked ? d.youtubeId : "",
+      audioUrl: unlocked ? (d.audioUrl ?? "") : "",
       previewText: d.previewText,
     };
   });

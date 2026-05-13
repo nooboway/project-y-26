@@ -308,8 +308,9 @@ components:
         isToday: { type: boolean }
         unlockDate: { type: string }
         youtubeId: { type: string }
+        audioUrl: { type: string }
         previewText: { type: string }
-      required: [slug, index, igboTitle, title, eyebrow, kind, unlocked, isToday, unlockDate, youtubeId, previewText]
+      required: [slug, index, igboTitle, title, eyebrow, kind, unlocked, isToday, unlockDate, youtubeId, audioUrl, previewText]
 
     LockedDay:
       type: object
