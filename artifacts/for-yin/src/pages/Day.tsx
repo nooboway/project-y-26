@@ -355,10 +355,50 @@ function DraftsLayout({ day }: { day: ApiDay }) {
 
 function WhyYouLayout({ day }: { day: ApiDay }) {
   const wy = dayCopy(day, "whyYou");
+  const hero = day.heroImage?.trim() ?? "";
+  const heroSrc = normaliseMedia(hero);
+  const isVideo = isVideoUrl(heroSrc);
+  const hasJumbo = heroSrc.length > 0;
   return (
     <PageFrame>
       <div className="filmstrip h-2 w-full" />
       <BackBar index={day.index} kind={day.kind} />
+
+      {/* Optional jumbotron: video (auto-play, muted, loop) or hero photo */}
+      {hasJumbo && (
+        <div className="px-5 sm:px-10 mt-6">
+          <div
+            className="relative w-full overflow-hidden"
+            style={{
+              aspectRatio: "16/9",
+              borderRadius: "6px",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.18)",
+              background: "#000",
+            }}
+          >
+            {isVideo ? (
+              <video
+                src={heroSrc}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <img
+                src={heroSrc}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="px-5 sm:px-10 mt-8 grid grid-cols-12 gap-4">
         <div className="col-span-12 sm:col-span-5">
           <div className="uppercase-mono opacity-60">{day.eyebrow}</div>
@@ -389,7 +429,6 @@ function WhyYouLayout({ day }: { day: ApiDay }) {
     </PageFrame>
   );
 }
-
 function PolaroidGallery({ items, prompt }: { items: { url: string; caption: string }[]; prompt?: string }) {
   return (
     <div className="px-5 sm:px-10 mt-10 max-w-5xl mx-auto">
