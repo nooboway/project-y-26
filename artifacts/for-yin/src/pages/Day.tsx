@@ -22,6 +22,30 @@ function dayCopy<K extends string>(day: any, key: K): any {
   return (day?.copy?.[key] ?? {}) as any;
 }
 
+// Normalise an external media URL so an <audio>/<video>/<img> can fetch it
+// directly. Google Drive share links and Dropbox links need their hostnames
+// flipped to direct-download equivalents.
+function normaliseMedia(url: string | null | undefined): string {
+  if (!url) return "";
+  const s = url.trim();
+  if (!s) return "";
+  if (s.includes("dropbox.com")) {
+    return s.replace("www.dropbox.com", "dl.dropboxusercontent.com").replace(/[?&]dl=[01]/g, "");
+  }
+  const drive = s.match(/drive\.google\.com\/file\/d\/([^/]+)/);
+  if (drive) return `https://drive.google.com/uc?export=download&id=${drive[1]}`;
+  // Google Drive "open?id=..." or "uc?id=..." styles already work — leave alone.
+  return s;
+}
+
+// Detect whether a URL points at a video file or Cloudinary video resource.
+function isVideoUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  const s = url.toLowerCase();
+  if (s.includes("/video/upload/")) return true; // Cloudinary video
+  return /\.(mp4|webm|mov|m4v|ogg)(\?|#|$)/.test(s);
+}
+
 const TEN_WAYS_DEFAULT: readonly string[] = [
   "The way you laugh like you're telling the room a secret",
   "How you make silence feel comfortable instead of empty",
@@ -142,11 +166,9 @@ function resolveAudio(day: ApiDay): AudioSource {
   if (sp) return { type: "spotify", kind: sp[1], id: sp[2] };
 
   if (raw.includes("soundcloud.com")) return { type: "soundcloud", url: raw };
-  if (raw.includes("dropbox.com")) return {
-    type: "direct",
-    url: raw.replace("www.dropbox.com", "dl.dropboxusercontent.com").replace(/[?&]dl=[01]/g, ""),
-  };
-  if (raw.startsWith("http")) return { type: "direct", url: raw };
+  // Direct file URLs from Dropbox / Drive / Cloudinary / generic CDN
+  const direct = normaliseMedia(raw);
+  if (direct.startsWith("http")) return { type: "direct", url: direct };
   return { type: "none" };
 }
 
@@ -210,11 +232,12 @@ function SongBlock({ day }: { day: ApiDay }) {
 
 function VoiceNoteBlock({ url, copy }: { url?: string | null; copy?: { prompt?: string } }) {
   if (!url) return null;
+  const src = normaliseMedia(url);
   return (
     <div className="mx-5 sm:mx-10 mt-6">
       <div className="uppercase-mono opacity-60 mb-2">{copy?.prompt || "a one-take voice note · play me"}</div>
       <div className="voice">
-        <audio controls preload="none" src={url} className="w-full" />
+        <audio controls preload="none" src={src} className="w-full" />
       </div>
     </div>
   );
@@ -659,15 +682,25 @@ function ScratchLayout({ day }: { day: ApiDay }) {
 // gives a "real-time human typing" feel.
 function useTypewriterSeq(
   segments: string[],
-  opts?: { speedMs?: number; jitterMs?: number; segmentPauseMs?: number; startDelayMs?: number },
+  opts?: {
+    speedMs?: number;
+    jitterMs?: number;
+    segmentPauseMs?: number;
+    startDelayMs?: number;
+    /** 0..1 probability of a typo per character. Set to 0 to disable. */
+    typoChance?: number;
+    /** 0..1 probability of an extra thinking pause at a word boundary. */
+    pauseChance?: number;
+  },
 ) {
-  const speed = opts?.speedMs ?? 32;
-  const jitter = opts?.jitterMs ?? 30;
-  const segPause = opts?.segmentPauseMs ?? 380;
-  const startDelay = opts?.startDelayMs ?? 220;
+  const speed = opts?.speedMs ?? 55;
+  const jitter = opts?.jitterMs ?? 35;
+  const segPause = opts?.segmentPauseMs ?? 520;
+  const startDelay = opts?.startDelayMs ?? 280;
+  const typoChance = opts?.typoChance ?? 0.025;
+  const pauseChance = opts?.pauseChance ?? 0.012;
 
-  // Use joined string as a stable dep — same content shouldn't restart.
-  const key = segments.join(" ");
+  const key = segments.join("|") + "|s" + speed;
 
   const [revealed, setRevealed] = useState<string[]>(() => segments.map(() => ""));
   const [activeIdx, setActiveIdx] = useState(0);
@@ -686,8 +719,22 @@ function useTypewriterSeq(
 
     let cur = 0;
     let i = 0;
+    let typoPending = false;
 
-    // Skip leading empty segments
+    // Adjacent QWERTY keys for plausible fat-finger typos.
+    const NEIGHBOURS: Record<string, string> = {
+      a:"sqw", b:"vng", c:"xvd", d:"sfre", e:"wrds", f:"dgrt", g:"fhty", h:"gjyu",
+      i:"uoj", j:"hknm", k:"jlmi", l:"ko", m:"nj", n:"bmh", o:"ipl", p:"o",
+      q:"wa", r:"etf", s:"adwe", t:"ryg", u:"yij", v:"cbg", w:"qes", x:"zcs",
+      y:"tuh", z:"xas",
+    };
+    function typoFor(ch: string): string | null {
+      const opts = NEIGHBOURS[ch.toLowerCase()];
+      if (!opts) return null;
+      const pick = opts[Math.floor(Math.random() * opts.length)];
+      return /[A-Z]/.test(ch) ? pick.toUpperCase() : pick;
+    }
+
     while (cur < segments.length && !segments[cur]) {
       setRevealed((prev) => { const next = [...prev]; next[cur] = ""; return next; });
       cur++;
@@ -697,33 +744,59 @@ function useTypewriterSeq(
     const tick = () => {
       if (cancelled) return;
       const seg = segments[cur] ?? "";
-      i++;
-      const ch = seg[i - 1];
-      setRevealed((prev) => { const next = [...prev]; next[cur] = seg.slice(0, i); return next; });
       setActiveIdx(cur);
 
+      // Recover from a typo by backspacing the wrong char.
+      if (typoPending) {
+        setRevealed((prev) => { const next = [...prev]; next[cur] = seg.slice(0, i); return next; });
+        typoPending = false;
+        timer = window.setTimeout(tick, 90 + Math.random() * 80);
+        return;
+      }
+
+      // Done with this segment? Advance.
       if (i >= seg.length) {
-        // segment done — advance, skipping empty
         let nextCur = cur + 1;
         while (nextCur < segments.length && !segments[nextCur]) {
           setRevealed((prev) => { const next = [...prev]; next[nextCur] = ""; return next; });
           nextCur++;
         }
-        if (nextCur >= segments.length) {
-          setActiveIdx(segments.length);
-          return;
-        }
+        if (nextCur >= segments.length) { setActiveIdx(segments.length); return; }
         cur = nextCur; i = 0;
-        timer = window.setTimeout(tick, segPause);
+        timer = window.setTimeout(tick, segPause + Math.random() * 220);
         return;
       }
 
+      const ch = seg[i];
+
+      // Maybe make a typo — show it briefly, then backspace it next tick.
+      if (i > 1 && /[A-Za-z]/.test(ch) && Math.random() < typoChance) {
+        const wrong = typoFor(ch);
+        if (wrong) {
+          setRevealed((prev) => { const next = [...prev]; next[cur] = seg.slice(0, i) + wrong; return next; });
+          typoPending = true;
+          timer = window.setTimeout(tick, 220 + Math.random() * 240);
+          return;
+        }
+      }
+
+      // Type one real character.
+      i++;
+      setRevealed((prev) => { const next = [...prev]; next[cur] = seg.slice(0, i); return next; });
+
+      // Compute delay before the next character.
       let delay = speed + (Math.random() * jitter - jitter / 2);
-      if (ch === "." || ch === "!" || ch === "?") delay += 240;
-      else if (ch === "," || ch === ";" || ch === ":") delay += 110;
-      else if (ch === "\n") delay += 220;
-      else if (ch === "—") delay += 80;
-      timer = window.setTimeout(tick, Math.max(8, delay));
+      if (ch === "." || ch === "!" || ch === "?") delay += 340;
+      else if (ch === "\n") delay += 280;
+      else if (ch === "," || ch === ";" || ch === ":") delay += 160;
+      else if (ch === "-") delay += 110;
+
+      // Random thinking pause at a word boundary.
+      if (ch === " " && Math.random() < pauseChance) {
+        delay += 420 + Math.random() * 680;
+      }
+
+      timer = window.setTimeout(tick, Math.max(12, delay));
     };
 
     timer = window.setTimeout(tick, startDelay);
@@ -733,7 +806,6 @@ function useTypewriterSeq(
 
   return { revealed, activeIdx, done: activeIdx >= segments.length };
 }
-
 function NotesCursor() {
   return (
     <span
@@ -766,13 +838,21 @@ function TerminalLayout({ day }: { day: ApiDay }) {
     reasons.forEach((r) => segs.push(r));
     segs.push(day.signoff ?? "");
     return segs;
-  }, [noteTitle, day.body, day.signoff, reasons.join(" ")]);
+  }, [noteTitle, day.body, day.signoff, reasons.join("")]);
 
-  const { revealed, activeIdx } = useTypewriterSeq(segments, { speedMs: 28, jitterMs: 28, segmentPauseMs: 360 });
+  // Admin can tune typing speed via day.copy.notes.typingSpeedMs (ms per char).
+  // Default 55ms feels deliberate and human; small/medium/slow presets supported.
+  const speedFromCopy = typeof notes.typingSpeedMs === "number" ? notes.typingSpeedMs : undefined;
+  const { revealed, activeIdx } = useTypewriterSeq(segments, {
+    speedMs: speedFromCopy ?? 55,
+    jitterMs: 35,
+    segmentPauseMs: 520,
+    typoChance: 0.025,
+    pauseChance: 0.012,
+  });
   const TITLE_IDX = 0;
   const BODY_IDX = 1;
   const FIRST_REASON_IDX = 2;
-  const LAST_REASON_IDX = FIRST_REASON_IDX + reasons.length - 1;
   const SIGNOFF_IDX = FIRST_REASON_IDX + reasons.length;
 
   return (
@@ -806,6 +886,23 @@ function TerminalLayout({ day }: { day: ApiDay }) {
           <div className="text-center mb-2 font-mono opacity-50" style={{ fontSize: "11px", color: "#a1a1a6" }}>
             {dateStr}
           </div>
+
+          {day.heroImage && (
+            <div className="mb-5">
+              <img
+                src={day.heroImage}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="w-full"
+                style={{
+                  borderRadius: "10px",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                  display: "block",
+                }}
+              />
+            </div>
+          )}
 
           <h1
             className="font-display text-2xl sm:text-3xl mb-5 leading-tight"
@@ -887,51 +984,160 @@ function VoiceMemoLayout({ day }: { day: ApiDay }) {
 function SlideshowLayout({ day }: { day: ApiDay }) {
   const [index, setIndex] = useState(0);
   const slides = day.slides ?? [];
+  const reasons: string[] = Array.isArray(day.reasons) ? day.reasons : [];
+  const wy = dayCopy(day, "whyYou");
+
+  // "Jumbotron" — if admin uploaded a video as heroImage (or a Cloudinary
+  // /video/upload/ link), render it autoplaying muted+looped at the top. If
+  // the heroImage is a plain photo, fall back to image jumbotron.
+  const hero = day.heroImage?.trim() ?? "";
+  const heroSrc = normaliseMedia(hero);
+  const isVideo = isVideoUrl(heroSrc);
+  const hasJumbo = heroSrc.length > 0;
+  const hasSlides = slides.length > 0;
+  const hasReasons = reasons.length > 0;
 
   return (
     <PageFrame dark>
       <BackBar index={day.index} kind={day.kind} />
-      <div className="slideshow-wrap mt-10 flex flex-col items-center justify-center">
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="slide-item"
+
+      {/* Jumbotron — auto-playing video or hero image at top */}
+      {hasJumbo && (
+        <div className="px-5 sm:px-10 mt-6">
+          <div
+            className="relative w-full overflow-hidden"
+            style={{
+              aspectRatio: "16/9",
+              borderRadius: "8px",
+              boxShadow: "0 30px 80px rgba(0,0,0,0.55)",
+              background: "#000",
+            }}
           >
-            <div className="font-display text-5xl sm:text-8xl mb-6 text-center leading-[0.9] max-w-4xl uppercase">
-              {slides[index]?.body}
-            </div>
-            {slides[index]?.sub && (
-              <div className="uppercase-mono text-rose-dust text-sm sm:text-base tracking-[0.3em]">
-                {slides[index].sub}
-              </div>
+            {isVideo ? (
+              <video
+                src={heroSrc}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="metadata"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <img
+                src={heroSrc}
+                alt=""
+                loading="lazy"
+                decoding="async"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
             )}
-          </motion.div>
-        </AnimatePresence>
-        
-        <div className="absolute bottom-12 inset-x-0 flex justify-center items-center gap-8">
-          <button 
-            className="btn-pill hairline-cream py-2 px-6" 
-            onClick={() => setIndex(prev => Math.max(0, prev - 1))}
-            disabled={index === 0}
-          >PREV</button>
-          <div className="font-mono text-xs opacity-40 tracking-widest">
-            {index + 1} / {slides.length}
+            <div
+              className="absolute inset-x-0 bottom-0 p-5 sm:p-8"
+              style={{
+                color: "var(--cream)",
+                background: "linear-gradient(180deg, transparent, rgba(0,0,0,0.65))",
+              }}
+            >
+              <div className="uppercase-mono opacity-90">{day.eyebrow}</div>
+              <SplitHeading
+                text={(day.title ?? "").toUpperCase()}
+                className="font-display leading-[0.9] mt-2"
+              />
+            </div>
           </div>
-          <button 
-            className="btn-pill hairline-cream py-2 px-6" 
-            onClick={() => setIndex(prev => Math.min(slides.length - 1, prev + 1))}
-            disabled={index === slides.length - 1}
-          >NEXT</button>
         </div>
-      </div>
-      <div className="max-w-3xl mx-auto px-5 sm:px-10 py-12 text-cream opacity-60 font-serif italic text-xl text-center whitespace-pre-wrap">
-        {day.body}
-      </div>
+      )}
+
+      {/* Slides — only when admin has authored some */}
+      {hasSlides && (
+        <div className="slideshow-wrap mt-10 flex flex-col items-center justify-center relative">
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -40 }}
+              transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+              className="slide-item"
+            >
+              <div className="font-display text-5xl sm:text-8xl mb-6 text-center leading-[0.9] max-w-4xl uppercase">
+                {slides[index]?.body}
+              </div>
+              {slides[index]?.sub && (
+                <div className="uppercase-mono text-rose-dust text-sm sm:text-base tracking-[0.3em]">
+                  {slides[index].sub}
+                </div>
+              )}
+            </motion.div>
+          </AnimatePresence>
+
+          <div className="absolute bottom-12 inset-x-0 flex justify-center items-center gap-8">
+            <button
+              className="btn-pill hairline-cream py-2 px-6"
+              onClick={() => setIndex(prev => Math.max(0, prev - 1))}
+              disabled={index === 0}
+            >PREV</button>
+            <div className="font-mono text-xs opacity-40 tracking-widest">
+              {index + 1} / {slides.length}
+            </div>
+            <button
+              className="btn-pill hairline-cream py-2 px-6"
+              onClick={() => setIndex(prev => Math.min(slides.length - 1, prev + 1))}
+              disabled={index === slides.length - 1}
+            >NEXT</button>
+          </div>
+        </div>
+      )}
+
+      {/* Body copy under the jumbotron / slides */}
+      {day.body && (
+        <div className="max-w-3xl mx-auto px-5 sm:px-10 py-10 text-cream opacity-80 font-serif italic text-xl text-center whitespace-pre-wrap">
+          {day.body}
+        </div>
+      )}
+
+      {/* Why-you list — admin populates day.reasons[] */}
+      {hasReasons && (
+        <div className="px-5 sm:px-10 mt-2 pb-12 max-w-4xl mx-auto" style={{ color: "var(--cream)" }}>
+          <div className="grid grid-cols-12 gap-4 items-end mb-6">
+            <div className="col-span-12 sm:col-span-5">
+              <div className="uppercase-mono opacity-60">{day.eyebrow}</div>
+              <SplitHeading text={(wy.heading || "WHY YOU.").toUpperCase()} className="font-display leading-[0.85] mt-3" />
+              <div className="font-display text-5xl sm:text-7xl outline-text leading-none -mt-1 opacity-90">
+                {wy.subhead || "FIELD NOTES"}
+              </div>
+            </div>
+          </div>
+          <ol className="space-y-2">
+            {reasons.map((r, i) => (
+              <motion.li
+                key={i}
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.06, duration: 0.5 }}
+                className="grid grid-cols-[56px_1fr] gap-4 py-4 border-b"
+                style={{ borderColor: "rgba(255,255,255,0.08)" }}
+              >
+                <div className="font-display text-3xl leading-none" style={{ color: "var(--rose-deep)" }}>
+                  {String(i + 1).padStart(2, "0")}
+                </div>
+                <div className="font-serif text-lg sm:text-xl leading-snug">{r}</div>
+              </motion.li>
+            ))}
+          </ol>
+        </div>
+      )}
+
+      {day.signoff && (
+        <div className="px-5 sm:px-10 pb-12 text-center font-serif italic text-xl" style={{ color: "var(--rose-dust)" }}>
+          {day.signoff}
+        </div>
+      )}
+
+      <VoiceNoteBlock url={day.voiceNoteUrl} copy={dayCopy(day, "voiceNote")} />
       <SongBlock day={day} />
+      <Ticker />
     </PageFrame>
   );
 }
